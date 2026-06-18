@@ -30,6 +30,17 @@
   --radius:8px; --radius-lg:12px;
   --font:'Inter',system-ui,-apple-system,sans-serif;
 }
+[data-theme="dark"] {
+  --bg:#141412; --surface:#1E1D1B; --border:#2E2C28; --border-strong:#3E3C38;
+  --text:#F0EDE8; --text-muted:#A09D95; --text-faint:#6B6860;
+  --accent:#3DB56A; --accent-light:#1A3326; --accent-mid:#5DC87A;
+  --warn:#D4820F; --warn-light:#2A1E0A;
+  --danger:#D95555; --danger-light:#2A1414;
+  --info:#4A9FE0; --info-light:#0E1F33;
+}
+/* Toggle button */
+.theme-btn{width:34px;height:34px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;flex-shrink:0;}
+.theme-btn:hover{background:var(--bg);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;}
 
@@ -217,6 +228,7 @@ canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);dis
       <button class="export-btn" onclick="downloadTemplate()" title="Scarica template Excel da compilare">⬇ Template</button>
       <button class="export-btn" onclick="openImport()" style="color:var(--accent);border-color:var(--accent);">↑ Importa Excel</button>
       <button class="export-btn" onclick="exportPDF()">↓ Esporta PDF</button>
+      <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambia tema"></button>
     </div>
 
     <div class="content">
@@ -1446,9 +1458,28 @@ function downloadTemplate(){
   XLSX.writeFile(wb, 'template_container_planner.xlsx');
 }
 
+// ── Tema chiaro/scuro ──
+function toggleTheme(){
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  const next=isDark?'light':'dark';
+  applyTheme(next);
+  localStorage.setItem('cp_theme',next);
+}
+function applyTheme(theme){
+  if(theme==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('themeBtn').textContent='☀️';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('themeBtn').textContent='🌙';
+  }
+}
+
 // Init
 if(!projects.length){const p=defaultProject();projects.push(p);saveProjects();}
 loadProject(projects[0].id);
+// Applica tema salvato
+applyTheme(localStorage.getItem('cp_theme')||'light');
 window.addEventListener('resize',()=>{if(currentData){const c=CONTAINERS[currentData.container];drawAllViews(lastPlaced,c,currentData.quota||0);}});
 
 // ── PWA: registra service worker inline ──
