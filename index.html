@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Container Planner</title>
+
+<!-- PWA Meta Tags -->
+<meta name="description" content="Piano di carico container — calcola, visualizza ed esporta il tuo piano di stivaggio">
+<meta name="theme-color" content="#1D5C3A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Container Planner">
+<link rel="manifest" href="manifest.json">
+
+<!-- Icona inline come data URI (SVG → PNG base64 non necessario per Edge) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%231D5C3A'/%3E%3Crect x='8' y='20' width='48' height='28' rx='3' fill='none' stroke='white' stroke-width='3'/%3E%3Crect x='14' y='26' width='14' height='16' rx='1' fill='white' opacity='.7'/%3E%3Crect x='32' y='26' width='14' height='16' rx='1' fill='white' opacity='.4'/%3E%3C/svg%3E">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#F7F6F2; --surface:#FFFFFF; --border:#E2E0D8; --border-strong:#C8C5BA;
+  --text:#1A1917; --text-muted:#6B6860; --text-faint:#A09D95;
+  --accent:#1D5C3A; --accent-light:#EAF3DE; --accent-mid:#3B6D11;
+  --warn:#854F0B; --warn-light:#FAEEDA;
+  --danger:#A32D2D; --danger-light:#FCEBEB;
+  --info:#185FA5; --info-light:#E6F1FB;
+  --radius:8px; --radius-lg:12px;
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.6;min-height:100vh;}
+
+/* Layout */
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh;}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.main{overflow-y:auto;}
+
+/* Sidebar */
+.sidebar-header{padding:20px 16px 12px;border-bottom:1px solid var(--border);}
+.logo{font-size:16px;font-weight:600;letter-spacing:-0.3px;color:var(--text);display:flex;align-items:center;gap:8px;}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);}
+.logo-sub{font-size:11px;color:var(--text-faint);margin-top:1px;}
+.sidebar-section{padding:12px 16px;}
+.sidebar-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:8px;}
+.new-btn{width:100%;padding:8px 12px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;justify-content:center;transition:opacity .15s;}
+.new-btn:hover{opacity:.88;}
+.project-list{flex:1;overflow-y:auto;padding:0 8px 16px;}
+.project-item{padding:10px;border-radius:var(--radius);cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:background .1s,border-color .1s;}
+.project-item:hover{background:var(--bg);}
+.project-item.active{background:var(--accent-light);border-color:#C0DD97;}
+.project-item-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.project-item-meta{font-size:11px;color:var(--text-faint);margin-top:2px;}
+.project-item-actions{display:none;gap:4px;margin-top:4px;}
+.project-item:hover .project-item-actions,.project-item.active .project-item-actions{display:flex;}
+.act-btn{font-size:11px;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text-muted);cursor:pointer;}
+.act-btn:hover{color:var(--danger);border-color:var(--danger);}
+.act-btn.rename{color:var(--info);border-color:var(--info);}
+
+/* Topbar */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;}
+.project-title-input{font-size:18px;font-weight:600;border:none;outline:none;background:transparent;color:var(--text);flex:1;letter-spacing:-0.3px;}
+.project-title-input::placeholder{color:var(--text-faint);}
+.export-btn{padding:7px 14px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--surface);color:var(--text);font-size:13px;cursor:pointer;font-weight:500;transition:background .1s;}
+.export-btn:hover{background:var(--bg);}
+
+/* Content */
+.content{padding:20px 24px;display:flex;flex-direction:column;gap:18px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;}
+
+/* Card */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin-bottom:14px;}
+
+/* Container grid */
+.cnt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.cnt-card{border:1px solid var(--border);border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .15s;}
+.cnt-card:hover{border-color:var(--border-strong);background:var(--bg);}
+.cnt-card.sel{border:2px solid var(--accent);background:var(--accent-light);}
+.cnt-card-name{font-size:13px;font-weight:600;}
+.cnt-card.sel .cnt-card-name{color:var(--accent-mid);}
+.cnt-card-type{font-size:10px;color:var(--text-faint);margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em;}
+.cnt-card-dim{font-size:10px;color:var(--text-muted);line-height:1.5;}
+.cnt-card.sel .cnt-card-dim{color:var(--accent-mid);}
+.porta-info{margin-top:12px;background:var(--bg);border-radius:var(--radius);padding:10px 14px;display:flex;gap:20px;flex-wrap:wrap;}
+.pi-item{display:flex;flex-direction:column;gap:1px;}
+.pi-label{color:var(--text-faint);font-size:10px;text-transform:uppercase;letter-spacing:.05em;}
+.pi-value{font-weight:600;color:var(--text);font-size:13px;}
+.pi-note{font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;width:100%;}
+
+/* Colli table */
+.colli-hdr{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 28px;gap:5px;padding:0 2px 6px;}
+.colli-hdr span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);text-align:center;}
+.colli-hdr span:first-child{text-align:left;}
+.collo-row{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 28px;gap:5px;align-items:center;margin-bottom:5px;}
+.collo-row input[type=text],.collo-row input[type=number]{width:100%;padding:6px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;}
+.collo-row input:focus{border-color:var(--accent);}
+.toggle-cell{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;}
+.toggle-cell span{font-size:9px;color:var(--text-faint);}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:pointer;}
+.del-btn{width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text-faint);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.del-btn:hover{background:var(--danger-light);color:var(--danger);border-color:var(--danger);}
+.add-collo-btn{margin-top:8px;padding:7px 12px;border:1px dashed var(--border-strong);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;width:100%;transition:all .15s;}
+.add-collo-btn:hover{background:var(--bg);color:var(--accent);border-color:var(--accent);}
+
+/* Settings */
+.settings-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+.setting-group{display:flex;flex-direction:column;gap:4px;}
+.setting-label{font-size:11px;color:var(--text-muted);}
+select{padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;cursor:pointer;}
+select:focus{border-color:var(--accent);}
+input[type=range]{accent-color:var(--accent);}
+.num-input{padding:6px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;width:72px;}
+.num-input:focus{border-color:var(--accent);}
+
+/* Alerts */
+.alerts{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.alert{padding:8px 12px;border-radius:var(--radius);font-size:12px;display:flex;gap:8px;align-items:flex-start;}
+.alert-warn{background:var(--warn-light);color:var(--warn);}
+.alert-err{background:var(--danger-light);color:var(--danger);}
+.alert-ok{background:var(--accent-light);color:var(--accent-mid);}
+
+/* Metrics */
+.metrics-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.metric{background:var(--bg);border-radius:var(--radius);padding:12px 14px;}
+.metric-label{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);margin-bottom:4px;}
+.metric-value{font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.5px;line-height:1;}
+.metric-sub{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.bar-section{margin-bottom:14px;}
+.bar-row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:3px;}
+.bar-row span:last-child{font-weight:600;color:var(--text);}
+.bar-wrap{height:10px;background:var(--bg);border-radius:5px;overflow:hidden;margin-bottom:8px;}
+.bar-fill{height:100%;border-radius:5px;transition:width .4s ease;}
+.results-table{width:100%;border-collapse:collapse;font-size:12px;}
+.results-table th{padding:7px 10px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);border-bottom:1px solid var(--border);}
+.results-table td{padding:7px 10px;border-bottom:1px solid var(--border);vertical-align:middle;}
+.results-table tr:last-child td{border-bottom:none;}
+.results-table tr:hover td{background:var(--bg);}
+.badge{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;font-weight:500;}
+.badge-green{background:var(--accent-light);color:var(--accent-mid);}
+.badge-gray{background:var(--bg);color:var(--text-muted);border:1px solid var(--border);}
+.badge-red{background:var(--danger-light);color:var(--danger);}
+.badge-qty{background:var(--info-light);color:var(--info);font-weight:700;min-width:30px;text-align:center;}
+.badge-warn{background:var(--warn-light);color:var(--warn);}
+
+/* 2D views */
+.views-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.view-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;}
+.view-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);display:block;width:100%;}
+.canvas-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);}
+.legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* Quota box */
+.quota-box{background:var(--info-light);border:1px solid #B8D4F0;border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.quota-box label{font-size:12px;color:var(--info);font-weight:500;}
+
+/* Import modal */
+.modal-overlay{position:fixed;inset:0;background:#00000055;z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal-overlay.hidden{display:none;}
+.modal{background:var(--surface);border-radius:var(--radius-lg);padding:24px 28px;width:480px;max-width:95vw;box-shadow:0 8px 32px #0003;}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:4px;letter-spacing:-.3px;}
+.modal-sub{font-size:12px;color:var(--text-muted);margin-bottom:18px;}
+.drop-zone{border:2px dashed var(--border-strong);border-radius:var(--radius-lg);padding:32px 16px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg);}
+.drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:var(--accent-light);}
+.drop-zone-icon{font-size:28px;margin-bottom:8px;}
+.drop-zone-text{font-size:13px;color:var(--text-muted);}
+.drop-zone-text strong{color:var(--accent);cursor:pointer;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+.modal-btn{padding:7px 16px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);}
+.modal-btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.modal-btn.primary:hover{opacity:.88;}
+.modal-btn:hover{background:var(--bg);}
+.import-preview{margin-top:14px;max-height:180px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;}
+.import-preview table{width:100%;border-collapse:collapse;}
+.import-preview th{padding:6px 10px;background:var(--bg);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);border-bottom:1px solid var(--border);text-align:left;}
+.import-preview td{padding:6px 10px;border-bottom:1px solid var(--border);color:var(--text);}
+.import-preview tr:last-child td{border-bottom:none;}
+.import-err{background:var(--danger-light);color:var(--danger);border-radius:var(--radius);padding:8px 12px;font-size:12px;margin-top:10px;}
+.template-note{background:var(--accent-light);border-radius:var(--radius);padding:10px 14px;font-size:12px;color:var(--accent-mid);margin-bottom:14px;}
+.template-note code{background:#fff5;border-radius:3px;padding:1px 5px;font-family:var(--mono);font-size:11px;}
+
+#tooltip{position:fixed;background:var(--text);color:#fff;font-size:11px;padding:5px 9px;border-radius:5px;pointer-events:none;display:none;z-index:100;max-width:220px;line-height:1.5;}
+
+@media(max-width:900px){
+  .app{grid-template-columns:1fr;}
+  .sidebar{display:none;}
+  .row2,.row3,.views-grid{grid-template-columns:1fr;}
+  .cnt-grid{grid-template-columns:repeat(2,1fr);}
+  .metrics-grid{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo"><span class="logo-dot"></span> Container Planner</div>
+      <div class="logo-sub">Piano di carico</div>
+    </div>
+    <div class="sidebar-section">
+      <button class="new-btn" onclick="newProject()">+ Nuovo progetto</button>
+    </div>
+    <div class="sidebar-section" style="padding-bottom:0;">
+      <div class="sidebar-label">Progetti salvati</div>
+    </div>
+    <div class="project-list" id="projectList"></div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <input class="project-title-input" id="projectTitle" type="text" placeholder="Nome progetto..." oninput="saveCurrentProject()">
+      <button class="export-btn" onclick="downloadTemplate()" title="Scarica template Excel da compilare">⬇ Template</button>
+      <button class="export-btn" onclick="openImport()" style="color:var(--accent);border-color:var(--accent);">↑ Importa Excel</button>
+      <button class="export-btn" onclick="exportPDF()">↓ Esporta PDF</button>
+    </div>
+
+    <div class="content">
+
+      <!-- Container -->
+      <div class="card">
+        <div class="card-title">Tipo di container</div>
+        <div class="cnt-grid" id="cntGrid"></div>
+        <div class="porta-info" id="portaInfo"></div>
+      </div>
+
+      <!-- Colli -->
+      <div class="card">
+        <div class="card-title">Colli da caricare</div>
+        <div class="colli-hdr">
+          <span>Nome</span><span>L cm</span><span>P cm</span><span>H cm</span><span>Peso kg</span><span>Q.tà</span><span style="text-align:center;">Impilabile</span><span></span>
+        </div>
+        <div id="colliRows"></div>
+        <button class="add-collo-btn" onclick="addCollo()">+ Aggiungi collo</button>
+
+        <div class="settings-row">
+          <!-- Quota -->
+          <div class="setting-group" style="flex:1;min-width:220px;">
+            <div class="quota-box">
+              <span style="font-size:18px;">📐</span>
+              <label for="quotaInput">Quota di sicurezza pareti/soffitto</label>
+              <input type="number" id="quotaInput" class="num-input" value="5" min="0" max="50" oninput="calcAndRender(); saveCurrentProject()" placeholder="cm">
+              <span style="font-size:12px;color:var(--info);">cm</span>
+            </div>
+            <span style="font-size:11px;color:var(--text-faint);margin-top:4px;">Spazio libero sottratto su ogni lato/soffitto per manovra e fissaggio imballi.</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 3 viste 2D — sopra al riepilogo -->
+      <div class="card">
+        <div class="card-title">Vista 2D — tutte le proiezioni</div>
+        <div class="views-grid">
+          <div class="view-card">
+            <div class="view-title">🔝 Pianta (dall'alto)</div>
+            <canvas id="cv-top"></canvas>
+          </div>
+          <div class="view-card">
+            <div class="view-title">🚪 Fronte (dalla porta)</div>
+            <canvas id="cv-front"></canvas>
+          </div>
+          <div class="view-card">
+            <div class="view-title">↔ Lato</div>
+            <canvas id="cv-side"></canvas>
+          </div>
+        </div>
+        <div class="canvas-legend" id="canvasLegend" style="margin-top:12px;"></div>
+        <p style="font-size:11px;color:var(--text-faint);margin-top:6px;">Le aree tratteggiate mostrano la quota di sicurezza. Passa il mouse sui riquadri per dettagli.</p>
+      </div>
+
+      <!-- Riepilogo -->
+      <div class="card">
+        <div class="card-title">Riepilogo carico</div>
+        <div id="alertsZone" class="alerts"></div>
+        <div class="metrics-grid" id="metricsGrid"></div>
+        <div class="bar-section" id="barSection"></div>
+        <div style="overflow-x:auto;"><table class="results-table" id="resultsTable">
+          <thead><tr>
+            <th>Collo</th><th>Dim. (cm)</th><th>Q.tà</th><th>Impilam.</th><th>Porta</th><th style="text-align:center;">Caricabili</th><th style="text-align:center;">Restanti</th><th style="text-align:right;">Peso tot.</th>
+          </tr></thead>
+          <tbody id="resultsTbody"></tbody>
+        </table></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- Import modal -->
+<div class="modal-overlay hidden" id="importOverlay" onclick="if(event.target===this)closeImport()">
+  <div class="modal">
+    <div class="modal-title">Importa colli da Excel</div>
+    <div class="modal-sub">Carica un file .xlsx o .xls con i tuoi colli. Puoi usare il template come punto di partenza.</div>
+    <div class="template-note">
+      Colonne richieste: <code>Nome</code> <code>L_cm</code> <code>P_cm</code> <code>H_cm</code> <code>Peso_kg</code><br>
+      <span style="font-size:11px;margin-top:4px;display:block;">Quantità e flag Impilabile si impostano nel programma dopo l'importazione.</span>
+    </div>
+    <div class="drop-zone" id="dropZone"
+      ondragover="event.preventDefault();this.classList.add('drag-over')"
+      ondragleave="this.classList.remove('drag-over')"
+      ondrop="handleDrop(event)"
+      onclick="document.getElementById('fileInput').click()">
+      <div class="drop-zone-icon">📂</div>
+      <div class="drop-zone-text">Trascina qui il file Excel<br>oppure <strong>clicca per selezionarlo</strong></div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this.files[0])">
+    <div id="importPreview"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeImport()">Annulla</button>
+      <button class="modal-btn primary" id="confirmImportBtn" style="display:none" onclick="confirmImport()">Importa colli</button>
+    </div>
+  </div>
+</div>
+
+<div id="tooltip"></div>
+
+<script>
+const CONTAINERS = {
+  '20std':    {label:"20' Std",      tipo:"Dry standard", l:590, p:235,h:239,porta_w:234,porta_h:229,maxPayload:28230,note:"Il più comune. Ideale per carichi pesanti e densi."},
+  '40std':    {label:"40' Std",      tipo:"Dry standard", l:1203,p:235,h:239,porta_w:234,porta_h:229,maxPayload:26700,note:"Doppio volume del 20'. Ottimo per merci leggere e voluminose."},
+  '40hq':     {label:"40' HQ",       tipo:"High Cube",    l:1203,p:235,h:270,porta_w:234,porta_h:260,maxPayload:26580,note:"30 cm più alto del 40' Std. Ideale per merci ingombranti in altezza."},
+  '45hq':     {label:"45' HQ",       tipo:"High Cube",    l:1360,p:235,h:270,porta_w:234,porta_h:260,maxPayload:25680,note:"Il più capiente. Non sempre disponibile — verifica la rotta."},
+  'reefer20': {label:"20' Reefer",   tipo:"Refrigerato",  l:538, p:228,h:220,porta_w:228,porta_h:213,maxPayload:27400,note:"Interno ridotto per impianto freddo. Per merci deperibili."},
+  'reefer40': {label:"40' Reefer",   tipo:"Refrigerato",  l:1156,p:228,h:220,porta_w:228,porta_h:213,maxPayload:29200,note:"Reefer grande. Verifica disponibilità sulla rotta."},
+  'opentop40':{label:"40' Open Top", tipo:"Open Top",     l:1201,p:234,h:235,porta_w:234,porta_h:193,maxPayload:26630,note:"Senza tetto fisso. Per merci alte o caricate dall'alto."},
+  'flatrack40':{label:"40' Flat Rack",tipo:"Flat Rack",   l:1202,p:200,h:198,porta_w:200,porta_h:198,maxPayload:40000,note:"Solo pianale e sponde. Per macchinari e carichi fuori sagoma."}
+};
+const PALETTE=['#1D9E75','#185FA5','#BA7517','#A32D2D','#7F77DD','#0F6E56','#3B6D11','#854F0B','#534AB7','#993556'];
+
+let projects=JSON.parse(localStorage.getItem('cp_projects')||'[]');
+let currentId=null, currentData=null;
+let lastDettagli=[], lastPlaced=[], allCanvasRects=[];
+
+function defaultProject(){
+  return {
+    id:Date.now().toString(), name:'Nuovo progetto',
+    created:new Date().toLocaleDateString('it-IT'),
+    container:'40hq',
+    colli:[
+      {nome:'Collo A',l:80,p:60,h:50,peso:30,qty:10,impilabile:true},
+      {nome:'Collo B',l:120,p:80,h:70,peso:80,qty:4,impilabile:false},
+      {nome:'Collo C',l:60,p:50,h:40,peso:15,qty:20,impilabile:true}
+    ],
+    efficiency:75, quota:5
+  };
+}
+
+function saveProjects(){localStorage.setItem('cp_projects',JSON.stringify(projects));}
+
+function saveCurrentProject(){
+  if(!currentId||!currentData)return;
+  currentData.name=document.getElementById('projectTitle').value||'Progetto senza nome';
+  currentData.quota=+document.getElementById('quotaInput').value||0;
+  const idx=projects.findIndex(p=>p.id===currentId);
+  if(idx!==-1){projects[idx]=currentData;saveProjects();renderSidebar();}
+}
+
+function newProject(){const p=defaultProject();projects.unshift(p);saveProjects();loadProject(p.id);}
+
+function loadProject(id){
+  currentId=id;
+  currentData=JSON.parse(JSON.stringify(projects.find(p=>p.id===id)));
+  document.getElementById('projectTitle').value=currentData.name;
+  document.getElementById('quotaInput').value=currentData.quota??5;
+  renderSidebar(); renderCntGrid(); renderColliRows(); calcAndRender();
+}
+
+function deleteProject(id){
+  if(!confirm('Eliminare questo progetto?'))return;
+  projects=projects.filter(p=>p.id!==id);saveProjects();
+  if(currentId===id){if(projects.length>0)loadProject(projects[0].id);else newProject();}
+  else renderSidebar();
+}
+
+function renameProject(id){
+  const p=projects.find(x=>x.id===id);
+  const n=prompt('Nuovo nome:',p.name);
+  if(n&&n.trim()){p.name=n.trim();saveProjects();if(currentId===id)document.getElementById('projectTitle').value=p.name;renderSidebar();}
+}
+
+function renderSidebar(){
+  const el=document.getElementById('projectList');
+  if(!projects.length){el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-faint);font-size:13px;">Nessun progetto</div>';return;}
+  el.innerHTML=projects.map(p=>`
+    <div class="project-item ${p.id===currentId?'active':''}" onclick="loadProject('${p.id}')">
+      <div class="project-item-name">${p.name}</div>
+      <div class="project-item-meta">${p.created} · ${CONTAINERS[p.container]?.label||p.container}</div>
+      <div class="project-item-actions">
+        <button class="act-btn rename" onclick="event.stopPropagation();renameProject('${p.id}')">Rinomina</button>
+        <button class="act-btn" onclick="event.stopPropagation();deleteProject('${p.id}')">Elimina</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderCntGrid(){
+  document.getElementById('cntGrid').innerHTML=Object.entries(CONTAINERS).map(([key,c])=>`
+    <div class="cnt-card ${key===currentData.container?'sel':''}" data-key="${key}" onclick="selectCnt('${key}')">
+      <div class="cnt-card-type">${c.tipo}</div>
+      <div class="cnt-card-name">${c.label}</div>
+      <div class="cnt-card-dim">${(c.l/100).toFixed(2)}×${(c.p/100).toFixed(2)}×${(c.h/100).toFixed(2)} m<br>Max ${c.maxPayload.toLocaleString()} kg</div>
+    </div>`).join('');
+  renderPortaInfo();
+}
+
+function selectCnt(key){
+  currentData.container=key;
+  document.querySelectorAll('.cnt-card').forEach(el=>el.classList.toggle('sel',el.dataset.key===key));
+  renderPortaInfo(); calcAndRender(); saveCurrentProject();
+}
+
+function renderPortaInfo(){
+  const c=CONTAINERS[currentData.container];
+  document.getElementById('portaInfo').innerHTML=`
+    <div class="pi-item"><div class="pi-label">Larg. porta</div><div class="pi-value">${c.porta_w} cm</div></div>
+    <div class="pi-item"><div class="pi-label">Alt. porta</div><div class="pi-value">${c.porta_h} cm</div></div>
+    <div class="pi-item"><div class="pi-label">Larg. int.</div><div class="pi-value">${c.p} cm</div></div>
+    <div class="pi-item"><div class="pi-label">Alt. int.</div><div class="pi-value">${c.h} cm</div></div>
+    <div class="pi-item"><div class="pi-label">Lung. int.</div><div class="pi-value">${c.l} cm</div></div>
+    <div class="pi-item"><div class="pi-label">Payload max</div><div class="pi-value">${c.maxPayload.toLocaleString()} kg</div></div>
+    <div class="pi-note">${c.note}</div>`;
+}
+
+function renderColliRows(){
+  document.getElementById('colliRows').innerHTML=currentData.colli.map((col,i)=>`
+    <div class="collo-row">
+      <input type="text" value="${col.nome}" placeholder="Nome" oninput="currentData.colli[${i}].nome=this.value;calcAndRender();saveCurrentProject()">
+      <input type="number" value="${col.l}" min="1" placeholder="L" oninput="currentData.colli[${i}].l=+this.value;calcAndRender();saveCurrentProject()">
+      <input type="number" value="${col.p}" min="1" placeholder="P" oninput="currentData.colli[${i}].p=+this.value;calcAndRender();saveCurrentProject()">
+      <input type="number" value="${col.h}" min="1" placeholder="H" oninput="currentData.colli[${i}].h=+this.value;calcAndRender();saveCurrentProject()">
+      <input type="number" value="${col.peso}" min="0" placeholder="kg" oninput="currentData.colli[${i}].peso=+this.value;calcAndRender();saveCurrentProject()">
+      <input type="number" value="${col.qty||1}" min="1" placeholder="n" oninput="currentData.colli[${i}].qty=+this.value;calcAndRender();saveCurrentProject()">
+      <div class="toggle-cell">
+        <input type="checkbox" ${col.impilabile?'checked':''} onchange="currentData.colli[${i}].impilabile=this.checked; this.nextElementSibling.textContent=this.checked?'Sì':'No'; calcAndRender(); saveCurrentProject()">
+        <span>${col.impilabile?'Sì':'No'}</span>
+      </div>
+      <button class="del-btn" onclick="delCollo(${i})" title="Rimuovi">×</button>
+    </div>`).join('');
+}
+
+function addCollo(){
+  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  currentData.colli.push({nome:'Collo '+(L[currentData.colli.length]||currentData.colli.length+1),l:60,p:40,h:40,peso:20,qty:1,impilabile:false});
+  renderColliRows();calcAndRender();saveCurrentProject();
+}
+function delCollo(i){currentData.colli.splice(i,1);renderColliRows();calcAndRender();saveCurrentProject();}
+
+function verificaPorta(col,c){
+  const pd=[c.porta_w,c.porta_h].sort((a,b)=>a-b);
+  const ori=[[col.l,col.p,col.h],[col.l,col.h,col.p],[col.p,col.l,col.h],[col.p,col.h,col.l],[col.h,col.l,col.p],[col.h,col.p,col.l]];
+  for(const[a,b,d]of ori){const s=[a,b].sort((x,y)=>x-y);if(s[0]<=pd[0]&&s[1]<=pd[1])return{passa:true,ori:`${a}×${b}×${d} cm`};}
+  return{passa:false,ori:null};
+}
+
+
+// ─── 3D BIN PACKER con AABB collision detection ──────────────────────────────
+// Sistema coordinate: x=lunghezza(0→uL), y=larghezza(0→uP), z=altezza(0→uH)
+// Ogni box piazzato: {x,y,z, l,p,h, nome,color,impilabile,...}
+//
+// Collision detection: AABB puro — due box collidono se si sovrappongono
+// su tutti e tre gli assi contemporaneamente.
+//
+// Ordine candidati (first-fit decreasing):
+//   x crescente → y crescente → z crescente
+// Questo riempie prima lungo la lunghezza, poi la larghezza, poi l'altezza.
+//
+// Regole impilamento:
+//   - Non impilabile: prima cerca z=0 (pavimento), poi in quota solo come fallback.
+//   - Impilabile grande: footprint desc → va a terra per primo.
+//   - Impilabile piccolo: placeOnTop cerca un impilabile già piazzato con
+//     footprint >= e spazio sopra; se non trova, va a terra come fallback.
+//   - Chi non è impilabile NON può reggere nulla sopra.
+
+function packBoxes(colli, uL, uP, uH) {
+  const placed = [];
+
+  // Collisione AABB tra due box
+  function overlaps(ax,ay,az,al,ap,ah, bx,by,bz,bl,bp,bh){
+    return ax<bx+bl-0.01 && ax+al>bx+0.01 &&
+           ay<by+bp-0.01 && ay+ap>by+0.01 &&
+           az<bz+bh-0.01 && az+ah>bz+0.01;
+  }
+
+  // Verifica che (x,y,z,l,p,h) sia dentro i bordi, non collida con nessuno,
+  // e — regola assoluta — non stia sopra a un box NON impilabile.
+  // "Sopra" significa: si sovrappone in XY con b, e z >= b.z+b.h (cioè parte dalla sua cima o più su).
+  function canPlace(x,y,z,l,p,h){
+    if(x<-0.01||y<-0.01||z<-0.01) return false;
+    if(x+l>uL+0.01||y+p>uP+0.01||z+h>uH+0.01) return false;
+    for(const b of placed){
+      // collisione AABB diretta
+      if(overlaps(x,y,z,l,p,h, b.x,b.y,b.z,b.l,b.p,b.h)) return false;
+      // regola assoluta: nessuno può stare sopra a un non-impilabile
+      if(!b.impilabile){
+        const overlapXY = x<b.x+b.l-0.01 && x+l>b.x+0.01 &&
+                          y<b.y+b.p-0.01 && y+p>b.y+0.01;
+        if(overlapXY && z>=b.z+b.h-0.01) return false;
+      }
+    }
+    return true;
+  }
+
+  // Altezza massima dei box IMPILABILI nell'area XY — su cosa ci si può appoggiare.
+  // I box non-impilabili non vengono contati: nessuno può usarli come base.
+  function zFloor(x,y,l,p){
+    let maxZ=0;
+    for(const b of placed){
+      if(!b.impilabile) continue; // non-impilabile: non fa da base
+      if(b.x<x+l-0.01 && b.x+b.l>x+0.01 &&
+         b.y<y+p-0.01 && b.y+b.p>y+0.01){
+        maxZ=Math.max(maxZ, b.z+b.h);
+      }
+    }
+    return maxZ;
+  }
+
+  // Candidati X e Y: 0 + bordi dei box già piazzati (ordinati crescenti)
+  function getCandidates(l,p){
+    const xs=new Set([0]);
+    const ys=new Set([0]);
+    for(const b of placed){ xs.add(b.x+b.l); ys.add(b.y+b.p); }
+    return {
+      xArr:[...xs].filter(v=>v+l<=uL+0.01).sort((a,b)=>a-b),
+      yArr:[...ys].filter(v=>v+p<=uP+0.01).sort((a,b)=>a-b)
+    };
+  }
+
+  // Candidati Z per una posizione XY: 0 + cime dei box che si sovrappongono in XY
+  function getZCandidates(x,y,l,p){
+    const zs=new Set([0]);
+    for(const b of placed){
+      if(b.x<x+l-0.01 && b.x+b.l>x+0.01 &&
+         b.y<y+p-0.01 && b.y+b.p>y+0.01){
+        zs.add(b.z+b.h);
+      }
+    }
+    return [...zs].sort((a,b)=>a-b);
+  }
+
+  // First-fit: cerca prima posizione libera.
+  // forceGroundOnly=true → tenta solo z=0, poi z>0 come fallback separato
+  function placeBox(box, forceGroundOnly){
+    const {l,p,h}=box;
+    const {xArr,yArr}=getCandidates(l,p);
+
+    if(forceGroundOnly){
+      // Tentativo 1: solo pavimento (z=0), riempie lateralmente
+      for(const x of xArr){
+        for(const y of yArr){
+          if(canPlace(x,y,0,l,p,h)){
+            placed.push({...box,x,y,z:0});
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    // First-fit generico: x→y→z, preferisce basse altezze
+    for(const x of xArr){
+      for(const y of yArr){
+        for(const z of getZCandidates(x,y,l,p)){
+          if(canPlace(x,y,z,l,p,h)){
+            placed.push({...box,x,y,z});
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // Verifica che l'intera base del box (x,y,z,l,p) sia completamente supportata
+  // da colli impilabili già piazzati (cima a esattamente z) oppure dal pavimento (z==0).
+  // Nessuno sbalzo ammesso.
+  function isFullySupported(x,y,z,l,p){
+    if(z<=0.01) return true; // appoggiato sul pavimento: ok
+    // Discretizza il footprint in punti di campionamento (ogni SAMPLE cm)
+    const SAMPLE=5;
+    const steps_x=Math.max(1,Math.ceil(l/SAMPLE));
+    const steps_y=Math.max(1,Math.ceil(p/SAMPLE));
+    for(let ix=0;ix<=steps_x;ix++){
+      for(let iy=0;iy<=steps_y;iy++){
+        const px=x + (ix/steps_x)*l*0.98 + l*0.01; // punto interno (evita bordi esatti)
+        const py=y + (iy/steps_y)*p*0.98 + p*0.01;
+        // controlla che esista almeno un box impilabile la cui cima sia a z in questo punto
+        let supported=false;
+        for(const b of placed){
+          if(!b.impilabile) continue;
+          if(px>=b.x-0.01&&px<=b.x+b.l+0.01&&
+             py>=b.y-0.01&&py<=b.y+b.p+0.01&&
+             Math.abs((b.z+b.h)-z)<0.5){
+            supported=true; break;
+          }
+        }
+        if(!supported) return false;
+      }
+    }
+    return true;
+  }
+
+  // Impila su un box impilabile già piazzato con footprint >= (più simile possibile).
+  // Controlla che non ci siano sbalzi: l'intera base deve essere supportata.
+  function placeOnTop(box){
+    const {l,p,h}=box;
+    const candidates=[...placed]
+      .filter(b=> b.impilabile && b.l>=l-0.01 && b.p>=p-0.01)
+      .map(b=>({b, score:(b.l*b.p)-(l*p)}))
+      .sort((a,b_)=>a.score-b_.score);
+
+    for(const {b:target} of candidates){
+      const offsets=[
+        {dx:0,                dy:0},
+        {dx:(target.l-l)/2,   dy:(target.p-p)/2},
+        {dx:target.l-l,       dy:0},
+        {dx:0,                dy:target.p-p},
+        {dx:target.l-l,       dy:target.p-p},
+      ];
+      for(const {dx,dy} of offsets){
+        const cx=target.x+dx, cy=target.y+dy;
+        if(cx<-0.01||cy<-0.01||cx+l>uL+0.01||cy+p>uP+0.01) continue;
+        const z=zFloor(cx,cy,l,p);
+        if(z < target.z+target.h-0.01) continue;
+        // Anti-sbalzo: verifica che tutta la base sia supportata
+        if(!isFullySupported(cx,cy,z,l,p)) continue;
+        if(canPlace(cx,cy,z,l,p,h)){
+          placed.push({...box,x:cx,y:cy,z});
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  // Impila generico (fallback di placeBox per impilabili):
+  // quando un impilabile va a terra tramite first-fit, verifica comunque
+  // che non finisca in quota su una base non completamente supportata.
+  function placeBoxStackable(box){
+    const {l,p,h}=box;
+    const {xArr,yArr}=getCandidates(l,p);
+    for(const x of xArr){
+      for(const y of yArr){
+        for(const z of getZCandidates(x,y,l,p)){
+          if(z>0.01 && !isFullySupported(x,y,z,l,p)) continue; // no sbalzo
+          if(canPlace(x,y,z,l,p,h)){
+            placed.push({...box,x,y,z});
+            return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // Ordina: footprint desc in entrambi i gruppi
+  const base  = colli.filter(c=>!c.impilabile).sort((a,b)=>(b.l*b.p)-(a.l*a.p));
+  const stack = colli.filter(c=> c.impilabile).sort((a,b)=>(b.l*b.p)-(a.l*a.p));
+
+  let excludedCount=0;
+
+  // Fase 1: non-impilabili — prima solo pavimento, poi quota come ultima risorsa
+  for(const col of base){
+    for(let n=0;n<col.qty;n++){
+      if(!placeBox({...col}, true)){   // solo z=0
+        if(!placeBox({...col}, false)) // fallback quota
+          excludedCount++;
+      }
+    }
+  }
+
+  // Fase 2: impilabili — grandi a terra (placeOnTop fallisce, va a terra),
+  //          piccoli trovano i grandi e ci salgono sopra
+  for(const col of stack){
+    for(let n=0;n<col.qty;n++){
+      if(!placeOnTop({...col})){
+        if(!placeBoxStackable({...col})) // fallback: first-fit con anti-sbalzo
+          excludedCount++;
+      }
+    }
+  }
+
+  return {placed, excludedCount};
+}
+
+function calcAndRender(){
+  const c=CONTAINERS[currentData.container];
+  const quota=+document.getElementById('quotaInput').value||0;
+  currentData.quota=quota;
+
+  const uL=c.l-quota*2;
+  const uP=c.p-quota*2;
+  const uH=c.h-quota;
+
+  let alerts=[],dettagli=[],totalePeso=0,totaleVol=0,totaleColliCaricati=0;
+
+  // Prepara lista colli validi
+  const colliValidi=[];
+  currentData.colli.forEach((col,i)=>{
+    if(!col.l||!col.p||!col.h) return;
+    const qty=col.qty||1;
+    const portaCheck=verificaPorta(col,c);
+    const color=PALETTE[i%PALETTE.length];
+    if(!portaCheck.passa){
+      alerts.push({tipo:'err',msg:`"${col.nome}" non passa dalla porta (${c.porta_w}×${c.porta_h} cm) in nessun orientamento.`});
+      dettagli.push({...col,qty,caricabili:0,restanti:qty,pesoTot:0,volTot:0,portaOk:false,portaOri:null,strati:1,entrata:false,color});
+      return;
+    }
+    if(col.l>uL||col.p>uP||col.h>uH){
+      alerts.push({tipo:'warn',msg:`"${col.nome}" supera le dimensioni utili del container (con quota ${quota} cm).`});
+      dettagli.push({...col,qty,caricabili:0,restanti:qty,pesoTot:0,volTot:0,portaOk:true,portaOri:portaCheck.ori,strati:1,entrata:false,color});
+      return;
+    }
+    colliValidi.push({...col,qty,portaOri:portaCheck.ori,color,_idx:i});
+  });
+
+  // Esegui packing 3D
+  const {placed, excludedCount} = packBoxes(colliValidi, uL, uP, uH);
+
+  // Conta piazzamenti per tipologia
+  const countMap={};
+  placed.forEach(b=>{ countMap[b.nome]=(countMap[b.nome]||0)+1; });
+
+  colliValidi.forEach(col=>{
+    const caricabili=countMap[col.nome]||0;
+    const restanti=col.qty-caricabili;
+    const pesoTot=caricabili*col.peso;
+    const volTot=caricabili*(col.l*col.p*col.h);
+    const strati=col.impilabile?Math.max(1,Math.floor(uH/col.h)):1;
+    if(restanti>0) alerts.push({tipo:'warn',msg:`"${col.nome}": ${restanti} collo/i su ${col.qty} non entra/entrano — spazio insufficiente.`});
+    dettagli.push({...col,caricabili,restanti,pesoTot,volTot,portaOk:true,portaOri:col.portaOri,strati,entrata:true,color:col.color});
+    totalePeso+=pesoTot; totaleVol+=volTot; totaleColliCaricati+=caricabili;
+  });
+
+  if(totalePeso>c.maxPayload) alerts.push({tipo:'err',msg:`Peso totale (${Math.round(totalePeso).toLocaleString()} kg) supera il payload massimo di ${c.maxPayload.toLocaleString()} kg!`});
+
+  const volContainer=c.l*c.p*c.h;
+  const percVol=Math.min(100,Math.round(totaleVol/volContainer*100));
+  const percPeso=Math.min(100,Math.round(totalePeso/c.maxPayload*100));
+
+  document.getElementById('alertsZone').innerHTML=alerts.map(a=>`
+    <div class="alert alert-${a.tipo}">${a.tipo==='err'?'✕':'⚠'} ${a.msg}</div>`).join('');
+
+  const totQty=currentData.colli.reduce((s,x)=>s+(x.qty||1),0);
+  const totRestanti=dettagli.reduce((s,d)=>s+d.restanti,0);
+  document.getElementById('metricsGrid').innerHTML=`
+    <div class="metric"><div class="metric-label">Colli caricati</div><div class="metric-value">${totaleColliCaricati.toLocaleString()}</div><div class="metric-sub">di ${totQty} totali</div></div>
+    <div class="metric"><div class="metric-label">Volume usato</div><div class="metric-value">${percVol}%</div><div class="metric-sub">${(totaleVol/1e6).toFixed(2)} / ${(volContainer/1e6).toFixed(1)} m³</div></div>
+    <div class="metric"><div class="metric-label">Peso totale</div><div class="metric-value">${Math.round(totalePeso).toLocaleString()}</div><div class="metric-sub">kg / ${c.maxPayload.toLocaleString()} max</div></div>
+    <div class="metric"><div class="metric-label">Colli esclusi</div><div class="metric-value" style="color:${totRestanti>0?'var(--danger)':'var(--accent)'}">${totRestanti}</div><div class="metric-sub">${totRestanti>0?'non entrano':'tutto caricato ✓'}</div></div>`;
+
+  const barCol=p=>p>90?'#E24B4A':p>70?'#EF9F27':'#1D9E75';
+  document.getElementById('barSection').innerHTML=`
+    <div class="bar-row"><span>Saturazione volumetrica</span><span>${percVol}%</span></div>
+    <div class="bar-wrap"><div class="bar-fill" style="width:${percVol}%;background:${barCol(percVol)};"></div></div>
+    <div class="bar-row"><span>Saturazione peso</span><span>${percPeso}%</span></div>
+    <div class="bar-wrap"><div class="bar-fill" style="width:${percPeso}%;background:${barCol(percPeso)};"></div></div>`;
+
+  document.getElementById('resultsTbody').innerHTML=dettagli.map(d=>`
+    <tr>
+      <td><span style="display:inline-block;width:9px;height:9px;border-radius:2px;background:${d.color};margin-right:6px;vertical-align:middle;"></span><strong>${d.nome}</strong></td>
+      <td style="color:var(--text-muted);">${d.l}×${d.p}×${d.h}</td>
+      <td style="text-align:center;"><span class="badge badge-gray">${d.qty}</span></td>
+      <td>${d.impilabile?`<span class="badge badge-green">▲ impil.</span>`:'<span class="badge badge-gray">—</span>'}</td>
+      <td>${d.portaOk?`<span class="badge badge-green" title="${d.portaOri}">✓</span>`:'<span class="badge badge-red">✕</span>'}</td>
+      <td style="text-align:center;"><span class="badge badge-qty">${d.caricabili}</span></td>
+      <td style="text-align:center;">${d.restanti>0?`<span class="badge badge-warn">+${d.restanti}</span>`:'<span class="badge badge-green">—</span>'}</td>
+      <td style="text-align:right;">${Math.round(d.pesoTot).toLocaleString()} kg</td>
+    </tr>`).join('');
+
+  lastDettagli=dettagli;
+  lastPlaced=placed;
+  drawAllViews(placed,c,quota);
+
+  document.getElementById('canvasLegend').innerHTML=dettagli.filter(d=>d.entrata&&d.caricabili>0).map(d=>`
+    <div class="legend-item"><div class="legend-dot" style="background:${d.color};"></div>${d.nome} (×${d.caricabili}${d.restanti>0?', <span style="color:var(--danger)">+'+d.restanti+' esclusi</span>':''})</div>`).join('');
+}
+
+function drawAllViews(placed,c,quota){
+  allCanvasRects=[];
+  const cntKey=currentData.container;
+  drawView('cv-top',  placed,c,quota,'top',  cntKey);
+  drawView('cv-front',placed,c,quota,'front',cntKey);
+  drawView('cv-side', placed,c,quota,'side', cntKey);
+}
+
+// Disegna una proiezione delle coordinate 3D reali dei box piazzati
+// top:   asse X = x(lunghezza), asse Y = y(larghezza)
+// front: asse X = y(larghezza), asse Y = z(altezza, invertita: alto=0)
+// side:  asse X = x(lunghezza), asse Y = z(altezza, invertita)
+function drawView(canvasId,placed,c,quota,view,cntKey){
+  const canvas=document.getElementById(canvasId);
+  const ctx=canvas.getContext('2d');
+  const PAD=30;
+  const W=canvas.offsetWidth||320;
+  canvas.width=W;
+
+  // Tipo container — dichiarato subito, usato ovunque sotto
+  const cntType=cntKey||'40hq';
+  const isOpenTop=cntType==='opentop40';
+  const isFlatRack=cntType==='flatrack40';
+
+  let cW,cH,label1,label2;
+  if(view==='top')  {cW=c.l;cH=c.p;  label1=`L ${c.l} cm`;label2=`P ${c.p} cm`;}
+  if(view==='front'){cW=c.p;cH=c.h;  label1=`P ${c.p} cm`;label2=`H ${c.h} cm`;}
+  if(view==='side') {cW=c.l;cH=c.h;  label1=`L ${c.l} cm`;label2=`H ${c.h} cm`;}
+
+  const scale=Math.min((W-PAD*2-20)/cW,(W*0.72-PAD*2)/cH);
+  const drawW=cW*scale, drawH=cH*scale;
+  const offX=PAD+10, offY=PAD;
+  canvas.height=drawH+PAD*2+20;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // Sfondo container — varia per tipo
+  if(isFlatRack){
+    ctx.fillStyle=view==='top'?'#F0EDE6':'#EBF4FB';
+  } else if(isOpenTop&&(view==='front'||view==='side')){
+    ctx.fillStyle='#F0F7ED';
+  } else {
+    ctx.fillStyle='#F0EDE6';
+  }
+  ctx.fillRect(offX,offY,drawW,drawH);
+
+  // Quota hatch
+  if(quota>0){
+    const q=quota*scale;
+    const hatch=(x,y,w,h)=>{
+      ctx.save();
+      ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();
+      ctx.fillStyle='#E6F1FB99';ctx.fillRect(x,y,w,h);
+      ctx.strokeStyle='#94BCE0';ctx.lineWidth=0.7;
+      for(let i=-h;i<w+h;i+=5){ctx.beginPath();ctx.moveTo(x+i,y);ctx.lineTo(x+i+h,y+h);ctx.stroke();}
+      ctx.restore();
+    };
+    // bordi laterali sempre
+    hatch(offX,offY,q,drawH);
+    hatch(offX+drawW-q,offY,q,drawH);
+    if(view==='top'){
+      // top e bottom (larghezza)
+      hatch(offX,offY,drawW,q);
+      hatch(offX,offY+drawH-q,drawW,q);
+    } else {
+      // solo soffitto (altezza)
+      hatch(offX,offY,drawW,q);
+    }
+  }
+
+  // Griglia
+  ctx.strokeStyle='#DDD9CE';ctx.lineWidth=0.5;
+  for(let v=0;v<=cW;v+=100){const s=offX+v*scale;ctx.beginPath();ctx.moveTo(s,offY);ctx.lineTo(s,offY+drawH);ctx.stroke();}
+  for(let v=0;v<=cH;v+=100){const s=offY+v*scale;ctx.beginPath();ctx.moveTo(offX,s);ctx.lineTo(offX+drawW,s);ctx.stroke();}
+
+  // ── Bordo container — distinzione visiva per tipo ──
+  const wallThick=3;
+
+  if(isFlatRack){
+    // ── FLAT RACK: solo pianale + due sponde laterali (no pareti, no tetto) ──
+    // Sfondo trasparente (no riempimento su front/side — carico esposto)
+    if(view==='top'){
+      // Vista dall'alto: pianale pieno, bordi laterali
+      ctx.fillStyle='#E8E5DC';
+      ctx.fillRect(offX,offY+drawH-wallThick,drawW,wallThick); // pianale
+      ctx.fillRect(offX,offY,wallThick,drawH); // sponda sx
+      ctx.fillRect(offX+drawW-wallThick,offY,wallThick,drawH); // sponda dx
+    } else {
+      // Vista front/side: solo pavimento + sponde, niente tetto né pareti lat
+      ctx.fillStyle='#8A878044';
+      ctx.fillRect(offX,offY+drawH-wallThick*2,drawW,wallThick*2); // pavimento
+      if(view==='front'){
+        ctx.fillRect(offX,offY,wallThick,drawH); // sponda sx
+        ctx.fillRect(offX+drawW-wallThick,offY,wallThick,drawH); // sponda dx
+      }
+    }
+    // Bordo pianale marcato
+    ctx.strokeStyle='#5A5750';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(offX,offY+drawH);ctx.lineTo(offX+drawW,offY+drawH);ctx.stroke();
+    // Bordi laterali
+    ctx.strokeStyle='#5A5750';ctx.lineWidth=2.5;
+    ctx.beginPath();ctx.moveTo(offX,offY);ctx.lineTo(offX,offY+drawH);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(offX+drawW,offY);ctx.lineTo(offX+drawW,offY+drawH);ctx.stroke();
+    // Frecce "carico libero lateralmente" su front/side
+    if(view==='front'||view==='side'){
+      ctx.fillStyle='#854F0B';ctx.font=`bold ${Math.max(9,Math.min(13,drawH*0.12))}px Inter,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('↔ carico libero',offX+drawW/2,offY+drawH*0.35);
+    }
+    // Label tipo
+    ctx.fillStyle='#854F0B99';ctx.font=`600 9px Inter,sans-serif`;
+    ctx.textAlign='left';ctx.textBaseline='top';
+    ctx.fillText('FLAT RACK',offX+4,offY+3);
+
+  } else if(isOpenTop){
+    // ── OPEN TOP: pareti normali, tetto aperto (tratteggiato) ──
+    ctx.strokeStyle='#888780';ctx.lineWidth=2;
+    // Pareti piene (tutti e 4 i lati tranne il tetto)
+    ctx.beginPath();
+    ctx.moveTo(offX,offY); // angolo top-left
+    ctx.lineTo(offX,offY+drawH); // lato sinistro
+    ctx.lineTo(offX+drawW,offY+drawH); // fondo
+    ctx.lineTo(offX+drawW,offY); // lato destro
+    ctx.stroke();
+    // Tetto tratteggiato = apertura superiore
+    if(view==='front'||view==='side'){
+      ctx.setLineDash([6,4]);ctx.strokeStyle='#1D9E7599';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(offX,offY);ctx.lineTo(offX+drawW,offY);ctx.stroke();
+      ctx.setLineDash([]);
+      // Frecce verso l'alto
+      const arrowX=[offX+drawW*0.25, offX+drawW*0.5, offX+drawW*0.75];
+      ctx.fillStyle='#1D9E75';ctx.font=`bold ${Math.max(10,Math.min(14,drawH*0.13))}px Inter,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='bottom';
+      arrowX.forEach(ax=>ctx.fillText('↑',ax,offY-2));
+      // Label
+      ctx.font=`600 9px Inter,sans-serif`;ctx.fillStyle='#1D9E7599';
+      ctx.textAlign='left';ctx.textBaseline='top';
+      ctx.fillText('OPEN TOP',offX+4,offY+3);
+    } else {
+      // Vista dall'alto: tetto aperto → sfondo diverso con pattern griglia
+      ctx.strokeStyle='#888780';ctx.lineWidth=2;ctx.strokeRect(offX,offY,drawW,drawH);
+      ctx.save();
+      ctx.beginPath();ctx.rect(offX+1,offY+1,drawW-2,drawH-2);ctx.clip();
+      ctx.strokeStyle='#1D9E7522';ctx.lineWidth=1;
+      for(let i=offX;i<offX+drawW;i+=18){ctx.beginPath();ctx.moveTo(i,offY);ctx.lineTo(i,offY+drawH);ctx.stroke();}
+      for(let i=offY;i<offY+drawH;i+=18){ctx.beginPath();ctx.moveTo(offX,i);ctx.lineTo(offX+drawW,i);ctx.stroke();}
+      ctx.restore();
+    }
+
+  } else {
+    // ── STANDARD / HQ / REEFER: container chiuso normale ──
+    ctx.strokeStyle='#888780';ctx.lineWidth=2;ctx.strokeRect(offX,offY,drawW,drawH);
+    // Reefer: sfumatura leggermente bluastra
+    if(cntType.startsWith('reefer') && (view==='front'||view==='side')){
+      ctx.save();
+      ctx.beginPath();ctx.rect(offX+1,offY+1,drawW-2,drawH-2);ctx.clip();
+      ctx.fillStyle='#E6F1FB33';ctx.fillRect(offX+1,offY+1,drawW-2,drawH-2);
+      ctx.restore();
+      ctx.font=`600 9px Inter,sans-serif`;ctx.fillStyle='#185FA577';
+      ctx.textAlign='left';ctx.textBaseline='top';
+      ctx.fillText('❄ REEFER',offX+4,offY+3);
+    }
+  }
+
+  // Pavimento evidenziato nelle viste frontale e laterale (tutti i tipi)
+  if(view==='front' || view==='side'){
+    const floorH=Math.max(4, 6*scale/10); // spessore visivo base ~6px
+    const floorY=offY+drawH-floorH;
+    ctx.fillStyle='#C8C5B044';
+    ctx.fillRect(offX+1,floorY,drawW-2,floorH-1);
+    // linea superiore del pavimento più marcata
+    ctx.strokeStyle='#8A8780';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(offX,floorY);ctx.lineTo(offX+drawW,floorY);ctx.stroke();
+    // tratteggio diagonale sul pavimento per renderlo distinguibile
+    ctx.save();
+    ctx.beginPath();ctx.rect(offX+1,floorY,drawW-2,floorH-1);ctx.clip();
+    ctx.strokeStyle='#8A878066';ctx.lineWidth=0.8;
+    for(let i=-(floorH);i<drawW+floorH;i+=6){
+      ctx.beginPath();ctx.moveTo(offX+i,floorY);ctx.lineTo(offX+i+floorH,floorY+floorH);ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Quota dashed border
+  if(quota>0){
+    const q=quota*scale;
+    ctx.setLineDash([4,3]);ctx.strokeStyle='#185FA5';ctx.lineWidth=1;
+    if(view==='top') ctx.strokeRect(offX+q,offY+q,drawW-q*2,drawH-q*2);
+    else             ctx.strokeRect(offX+q,offY+q,drawW-q*2,drawH-q);
+    ctx.setLineDash([]);
+  }
+
+  // ── Disegna i box usando coordinate 3D reali ──
+  // In ogni vista mostriamo la PROIEZIONE: ogni box diventa un rettangolo 2D.
+  // I box si sovrappongono in proiezione — li disegniamo dal basso verso l'alto
+  // (z crescente) così quelli in alto coprono quelli sotto, dando profondità visiva.
+  const sortedBoxes=[...placed].sort((a,b)=>{
+    if(view==='top')   return a.z-b.z;  // z crescente (più alto = sopra nella vista)
+    if(view==='front') return a.x-b.x;  // x crescente (più lontano dalla porta = dietro)
+    if(view==='side')  return a.y-b.y;  // y crescente (più lontano = dietro)
+    return 0;
+  });
+
+  for(const box of sortedBoxes){
+    let rx,ry,rw,rh;
+    if(view==='top'){
+      // proiezione su piano XY: x→X, y→Y
+      rx=offX+box.x*scale;
+      ry=offY+box.y*scale;
+      rw=box.l*scale;
+      rh=box.p*scale;
+    } else if(view==='front'){
+      // proiezione su piano YZ (dalla porta, porta = lato L): y→X, z→Y(inv)
+      rx=offX+box.y*scale;
+      ry=offY+(c.h-box.z-box.h)*scale;
+      rw=box.p*scale;
+      rh=box.h*scale;
+    } else {
+      // proiezione su piano XZ (lato): x→X, z→Y(inv)
+      rx=offX+box.x*scale;
+      ry=offY+(c.h-box.z-box.h)*scale;
+      rw=box.l*scale;
+      rh=box.h*scale;
+    }
+
+    // quota offset per top/front/side
+    // già incorporata nelle coordinate box (box.x/y/z partono da quota)
+    const rw2=Math.max(1,rw-1.5), rh2=Math.max(1,rh-1.5);
+
+    ctx.fillStyle=box.color+'3A';
+    ctx.fillRect(rx,ry,rw2,rh2);
+    ctx.strokeStyle=box.color;ctx.lineWidth=1.5;
+    ctx.strokeRect(rx,ry,rw2,rh2);
+
+    const fs=Math.min(9,Math.min(rw2,rh2)/2.8);
+    if(rw2>16&&rh2>10&&fs>=5){
+      ctx.fillStyle=box.color;
+      ctx.font=`600 ${fs}px Inter,sans-serif`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(box.nome.substring(0,6),rx+rw2/2,ry+rh2/2);
+    }
+
+    allCanvasRects.push({
+      canvasId,x:rx,y:ry,w:rw2,h:rh2,
+      nome:box.nome,dim:`${box.l}×${box.p}×${box.h} cm`,
+      pos:`x:${Math.round(box.x+quota)} y:${Math.round(box.y+quota)} z:${Math.round(box.z)} cm`,
+      peso:`${box.peso} kg/cad`,impilabile:box.impilabile
+    });
+  }
+
+  // Indicatore porta
+  if(view==='top'||view==='front'){
+    ctx.fillStyle='#185FA5';ctx.font='bold 8px Inter,sans-serif';
+    ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.fillText('▶',offX+drawW+4,offY+drawH/2-5);
+    ctx.fillText('PORTA',offX+drawW+4,offY+drawH/2+5);
+    ctx.strokeStyle='#185FA5';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(offX+drawW,offY+drawH*0.2);ctx.lineTo(offX+drawW,offY+drawH*0.8);ctx.stroke();
+  }
+
+  // Etichette assi
+  ctx.fillStyle='#6B6860';ctx.font='10px Inter,sans-serif';
+  ctx.textAlign='center';ctx.textBaseline='top';
+  ctx.fillText(label1,offX+drawW/2,offY+drawH+5);
+  ctx.save();ctx.translate(offX-10,offY+drawH/2);ctx.rotate(-Math.PI/2);
+  ctx.textAlign='center';ctx.fillText(label2,0,0);ctx.restore();
+}
+
+// Tooltip
+['cv-top','cv-front','cv-side'].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener('mousemove',e=>{
+    const rect=el.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    const hit=allCanvasRects.find(r=>r.canvasId===id&&mx>=r.x&&mx<=r.x+r.w&&my>=r.y&&my<=r.y+r.h);
+    const tip=document.getElementById('tooltip');
+    if(hit){
+      tip.style.display='block';
+      tip.style.left=(e.clientX+12)+'px';
+      tip.style.top=(e.clientY-10)+'px';
+      tip.innerHTML=`<strong>${hit.nome}</strong><br>${hit.dim} · ${hit.peso}<br>pos: ${hit.pos}${hit.impilabile?'<br>▲ impilabile':''}`;
+    }else tip.style.display='none';
+  });
+  el.addEventListener('mouseleave',()=>document.getElementById('tooltip').style.display='none');
+});
+
+// PDF
+function hexToRgb(hex){
+  return [parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+}
+
+function exportPDF(){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const c=CONTAINERS[currentData.container];
+  const name=currentData.name||'Piano di carico';
+  const today=new Date().toLocaleDateString('it-IT');
+  const quota=currentData.quota||0;
+  const ML=14,MR=196,CW=182,PW=210;
+
+  const resetColor=()=>doc.setTextColor(26,25,23);
+  const sectionHdr=(text,yy)=>{
+    doc.setFillColor(29,94,58);doc.rect(ML,yy,CW,6,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont(undefined,'bold');
+    doc.text(text,ML+2,yy+4.2);resetColor();return yy+9;
+  };
+
+  // ── PAGINA 1: intestazione + viste + metriche ──
+  doc.setFillColor(29,94,58);doc.rect(0,0,PW,20,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15);doc.setFont(undefined,'bold');doc.text('Container Planner',ML,12);
+  doc.setFontSize(8);doc.setFont(undefined,'normal');doc.text('Piano di carico',ML,17);
+  doc.text(today,MR,12,{align:'right'});
+  resetColor();
+  doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text(name,ML,28);
+  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.setTextColor(107,104,96);
+  doc.text(`Container: ${c.label} (${c.tipo})  |  ${c.l}×${c.p}×${c.h} cm  |  Payload max: ${c.maxPayload.toLocaleString()} kg  |  Quota sicurezza: ${quota} cm`,ML,33);
+  doc.setDrawColor(226,224,216);doc.line(ML,35.5,MR,35.5);
+  let y=39;
+
+  // Viste 2D
+  y=sectionHdr('VISTA 2D — PROIEZIONI DEL CONTAINER',y);
+  const vw=(CW-8)/3;
+  [{id:'cv-top',lbl:'Pianta (dall\'alto)'},{id:'cv-front',lbl:'Fronte (dalla porta)'},{id:'cv-side',lbl:'Lato'}].forEach((v,i)=>{
+    const cvs=document.getElementById(v.id);
+    const ix=ML+i*(vw+4);
+    const ratio=cvs&&cvs.width?cvs.height/cvs.width:0.45;
+    const ih=Math.min(vw*ratio,48);
+    doc.setFillColor(247,246,242);doc.setDrawColor(226,224,216);doc.rect(ix,y,vw,ih+7,'FD');
+    doc.setFontSize(6.5);doc.setFont(undefined,'bold');doc.setTextColor(107,104,96);
+    doc.text(v.lbl,ix+vw/2,y+4.5,{align:'center'});
+    if(cvs&&cvs.width){try{doc.addImage(cvs.toDataURL('image/png'),'PNG',ix+1,y+6,vw-2,ih);}catch(e){}}
+    resetColor();
+  });
+  const maxIH=48;
+  y+=maxIH+10;
+
+  // Legenda — misura ogni etichetta e va a capo se non entra
+  doc.setFontSize(7);doc.setFont(undefined,'normal');
+  let lx=ML;
+  lastDettagli.filter(d=>d.entrata&&d.caricabili>0).forEach(d=>{
+    const label=`${d.nome} (×${d.caricabili})`;
+    const labelW=doc.getTextWidth(label)+8; // 3px dot + 1px gap + 4px margin
+    if(lx+labelW>MR){lx=ML;y+=5;}
+    doc.setFillColor(...hexToRgb(d.color));doc.rect(lx,y-2.5,3,3,'F');
+    resetColor();doc.text(label,lx+4.5,y);
+    lx+=labelW+4;
+  });
+  y+=7;
+
+  // Metriche
+  const totCar=lastDettagli.reduce((s,d)=>s+d.caricabili,0);
+  const totRest=lastDettagli.reduce((s,d)=>s+d.restanti,0);
+  const totPeso=Math.round(lastDettagli.reduce((s,d)=>s+d.pesoTot,0));
+  const volContainer=c.l*c.p*c.h;
+  const totVol=lastDettagli.reduce((s,d)=>s+d.volTot,0);
+  const percVol=Math.min(100,Math.round(totVol/volContainer*100));
+  const percPeso=Math.min(100,Math.round(totPeso/c.maxPayload*100));
+  const totQty=lastDettagli.reduce((s,d)=>s+d.qty,0);
+
+  y=sectionHdr('RIEPILOGO',y);
+  const mw=(CW-9)/4;
+  [{lbl:'Colli caricati',val:String(totCar),sub:`di ${totQty} totali`},
+   {lbl:'Volume usato',val:`${percVol}%`,sub:`${(totVol/1e6).toFixed(2)} / ${(volContainer/1e6).toFixed(1)} m³`},
+   {lbl:'Peso totale',val:`${totPeso.toLocaleString()} kg`,sub:`max ${c.maxPayload.toLocaleString()} kg`},
+   {lbl:'Colli esclusi',val:String(totRest),sub:totRest>0?'non entrano':'tutto caricato',alert:totRest>0}
+  ].forEach((m,i)=>{
+    const mx=ML+i*(mw+3);
+    doc.setFillColor(247,246,242);doc.setDrawColor(226,224,216);doc.rect(mx,y,mw,14,'FD');
+    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(160,157,149);
+    doc.text(m.lbl,mx+mw/2,y+4,{align:'center'});
+    doc.setFontSize(10);doc.setFont(undefined,'bold');
+    m.alert?doc.setTextColor(163,45,45):resetColor();
+    doc.text(m.val,mx+mw/2,y+9.5,{align:'center'});
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,104,96);
+    doc.text(m.sub,mx+mw/2,y+13,{align:'center'});
+  });
+  resetColor();y+=18;
+
+  // Barre
+  [[`Saturazione volumetrica`,percVol],[`Saturazione peso`,percPeso]].forEach(([lbl,perc])=>{
+    const bc=perc>90?[226,75,74]:perc>70?[239,159,39]:[29,158,117];
+    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,104,96);
+    doc.text(lbl,ML,y);doc.text(`${perc}%`,MR,y,{align:'right'});
+    doc.setFillColor(226,224,216);doc.rect(ML,y+1,CW,3,'F');
+    doc.setFillColor(...bc);doc.rect(ML,y+1,CW*perc/100,3,'F');
+    resetColor();y+=8;
+  });
+
+  // ── PAGINA 2: riepilogo + tabella dettaglio ──
+  doc.addPage();
+  doc.setFillColor(29,94,58);doc.rect(0,0,PW,14,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont(undefined,'bold');
+  doc.text(`Container Planner — ${name}`,ML,9);
+  doc.setFontSize(7.5);doc.setFont(undefined,'normal');doc.text(today,MR,9,{align:'right'});
+  resetColor();y=20;
+
+  // ── Metriche ──
+  y=sectionHdr('RIEPILOGO CARICO',y);
+  const mw2=(CW-9)/4;
+  [{lbl:'Colli caricati',val:String(totCar),sub:`di ${lastDettagli.reduce((s,d)=>s+d.qty,0)} totali`},
+   {lbl:'Volume usato',val:`${percVol}%`,sub:`${(totVol/1e6).toFixed(2)} / ${(volContainer/1e6).toFixed(1)} m³`},
+   {lbl:'Peso totale',val:`${totPeso.toLocaleString()} kg`,sub:`max ${c.maxPayload.toLocaleString()} kg`},
+   {lbl:'Colli esclusi',val:String(totRest),sub:totRest>0?'non entrano':'tutto caricato ✓',alert:totRest>0}
+  ].forEach((m,i)=>{
+    const mx=ML+i*(mw2+3);
+    doc.setFillColor(247,246,242);doc.setDrawColor(226,224,216);doc.rect(mx,y,mw2,14,'FD');
+    doc.setFontSize(6.5);doc.setFont(undefined,'normal');doc.setTextColor(160,157,149);
+    doc.text(m.lbl,mx+mw2/2,y+4,{align:'center'});
+    doc.setFontSize(11);doc.setFont(undefined,'bold');
+    m.alert?doc.setTextColor(163,45,45):resetColor();
+    doc.text(m.val,mx+mw2/2,y+9.5,{align:'center'});
+    doc.setFontSize(6);doc.setFont(undefined,'normal');doc.setTextColor(107,104,96);
+    doc.text(m.sub,mx+mw2/2,y+13,{align:'center'});
+  });
+  resetColor();y+=18;
+
+  // ── Barre saturazione ──
+  [[`Saturazione volumetrica`,percVol],[`Saturazione peso`,percPeso]].forEach(([lbl,perc])=>{
+    const bc=perc>90?[226,75,74]:perc>70?[239,159,39]:[29,158,117];
+    doc.setFontSize(7);doc.setFont(undefined,'normal');doc.setTextColor(107,104,96);
+    doc.text(lbl,ML,y);doc.text(`${perc}%`,MR,y,{align:'right'});
+    doc.setFillColor(226,224,216);doc.rect(ML,y+1,CW,3,'F');
+    doc.setFillColor(...bc);doc.rect(ML,y+1,CW*perc/100,3,'F');
+    resetColor();y+=8;
+  });
+  y+=4;
+
+  // ── Tabella riepilogo per tipologia ──
+  y=sectionHdr('DETTAGLIO COLLI',y);
+
+  const tc=[ML,62,90,99,110,122,140,154,168,183];
+  doc.setFontSize(6.5);doc.setFont(undefined,'bold');doc.setTextColor(160,157,149);
+  ['COLLO','DIM. (cm)','Q.TÀ','IMPILAM.','STRATI','PORTA','CARIC.','ESCL.','PESO TOT.']
+    .forEach((h,i)=>doc.text(h,tc[i],y));
+  y+=2.5;doc.setDrawColor(226,224,216);doc.line(ML,y,MR,y);y+=3.5;
+
+  // Helper: tronca testo se supera maxW px
+  const truncate=(text,maxW)=>{
+    if(doc.getTextWidth(text)<=maxW) return text;
+    let t=text;
+    while(t.length>4 && doc.getTextWidth(t+'…')>maxW) t=t.slice(0,-1);
+    return t+'…';
+  };
+
+  doc.setFont(undefined,'normal');resetColor();
+  lastDettagli.forEach((d,ri)=>{
+    if(y>275){
+      doc.addPage();
+      doc.setFillColor(29,94,58);doc.rect(0,0,PW,12,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(8);doc.setFont(undefined,'bold');
+      doc.text(`${name} (continua)`,ML,8);resetColor();y=18;
+    }
+    if(ri%2===0){doc.setFillColor(250,249,246);doc.rect(ML,y-3,CW,5,'F');}
+    doc.setFillColor(...hexToRgb(d.color));doc.rect(tc[0],y-2.2,2.5,2.8,'F');
+    doc.setFontSize(6.5);resetColor();
+    // Nome troncato alla larghezza disponibile (fino alla colonna DIM.)
+    doc.text(truncate(d.nome, tc[1]-tc[0]-5), tc[0]+4, y);
+    doc.setTextColor(107,104,96);doc.text(`${d.l}×${d.p}×${d.h}`,tc[1],y);
+    resetColor();doc.text(String(d.qty),tc[2],y);
+    doc.text(d.impilabile?'Sì':'No',tc[3],y);
+    doc.text(String(d.strati),tc[4],y);
+    d.portaOk?doc.setTextColor(29,94,58):doc.setTextColor(163,45,45);
+    doc.text(d.portaOk?'✓ Sì':'✕ No',tc[5],y);
+    resetColor();doc.text(String(d.caricabili),tc[6],y);
+    d.restanti>0?doc.setTextColor(163,45,45):doc.setTextColor(29,94,58);
+    doc.text(String(d.restanti),tc[7],y);
+    resetColor();doc.text(`${Math.round(d.pesoTot).toLocaleString()} kg`,tc[8],y);
+    y+=5;doc.setDrawColor(240,237,230);doc.line(ML,y-1.5,MR,y-1.5);
+  });
+
+  y+=4;
+  doc.setFillColor(234,243,222);doc.rect(ML,y-3,CW,7,'F');
+  doc.setFont(undefined,'bold');doc.setFontSize(8);resetColor();
+  doc.text(`Totale caricati: ${totCar}`,ML+2,y+1.5);
+  doc.text(`Esclusi: ${totRest}`,ML+55,y+1.5);
+  doc.text(`Peso totale: ${totPeso.toLocaleString()} kg`,ML+105,y+1.5);
+
+  doc.save(`${name.replace(/\s+/g,'-')}.pdf`);
+}
+
+// ─── EXCEL IMPORT ─────────────────────────────────────────────────────────────
+let importedRows = [];
+
+function openImport(){
+  document.getElementById('importOverlay').classList.remove('hidden');
+  document.getElementById('importPreview').innerHTML='';
+  document.getElementById('confirmImportBtn').style.display='none';
+  document.getElementById('dropZone').classList.remove('drag-over');
+  document.getElementById('fileInput').value='';
+  importedRows=[];
+}
+function closeImport(){ document.getElementById('importOverlay').classList.add('hidden'); }
+
+function handleDrop(e){
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(file) handleFile(file);
+}
+
+function handleFile(file){
+  if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls'].includes(ext)){
+    showImportError('Formato non supportato. Carica un file .xlsx o .xls');
+    return;
+  }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      parseImportRows(rows);
+    } catch(err){
+      showImportError('Errore nella lettura del file: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Mappa flessibile dei nomi colonne
+const COL_MAP={
+  nome:  ['nome','name','collo','codice','articolo','descrizione'],
+  l:     ['l_cm','l cm','l(cm)','lunghezza','lunghezza_cm','lung','length'],
+  p:     ['p_cm','p cm','p(cm)','profondita','profondità','profondita_cm','depth','width','larghezza'],
+  h:     ['h_cm','h cm','h(cm)','altezza','altezza_cm','height'],
+  peso:  ['peso_kg','peso kg','peso(kg)','peso','weight','kg'],
+};
+
+function findCol(header, key){
+  const variants=COL_MAP[key];
+  const h=header.toLowerCase().trim().replace(/[\s\-]/g,'_');
+  return variants.some(v=>h===v.replace(/[\s\-]/g,'_')||h.includes(v.replace(/[\s\-]/g,'_')));
+}
+
+function parseImportRows(rows){
+  if(!rows.length){ showImportError('Il file è vuoto.'); return; }
+  const headers=Object.keys(rows[0]);
+
+  const colMap={};
+  for(const key of Object.keys(COL_MAP)){
+    colMap[key]=headers.find(h=>findCol(h,key))||null;
+  }
+
+  const missing=[];
+  if(!colMap.nome) missing.push('Nome');
+  if(!colMap.l)    missing.push('L_cm');
+  if(!colMap.p)    missing.push('P_cm');
+  if(!colMap.h)    missing.push('H_cm');
+  if(missing.length){ showImportError(`Colonne non trovate: ${missing.join(', ')}. Controlla il template.`); return; }
+
+  importedRows=[];
+  const errors=[];
+  rows.forEach((row,i)=>{
+    const nome=String(row[colMap.nome]||'').trim()||`Collo ${i+1}`;
+    const l=parseFloat(row[colMap.l]);
+    const p=parseFloat(row[colMap.p]);
+    const h=parseFloat(row[colMap.h]);
+    const peso=colMap.peso ? parseFloat(row[colMap.peso])||0 : 0;
+
+    if(isNaN(l)||l<=0||isNaN(p)||p<=0||isNaN(h)||h<=0){
+      errors.push(`Riga ${i+2}: dimensioni non valide per "${nome}"`);
+      return;
+    }
+    // Quantità e impilabile: default — l'utente li imposta nel programma
+    importedRows.push({nome, l, p, h, peso, qty:1, impilabile:false});
+  });
+
+  if(!importedRows.length){ showImportError('Nessuna riga valida trovata.<br>'+(errors.join('<br>'))); return; }
+
+  let html=`<div class="import-preview"><table>
+    <thead><tr><th>Nome</th><th>L</th><th>P</th><th>H</th><th>Peso kg</th></tr></thead><tbody>`;
+  importedRows.slice(0,8).forEach(r=>{
+    html+=`<tr><td><strong>${r.nome}</strong></td><td>${r.l}</td><td>${r.p}</td><td>${r.h}</td><td>${r.peso}</td></tr>`;
+  });
+  if(importedRows.length>8) html+=`<tr><td colspan="5" style="text-align:center;color:var(--text-faint);padding:8px;">… e altri ${importedRows.length-8} colli</td></tr>`;
+  html+=`</tbody></table></div>`;
+  if(errors.length) html+=`<div class="import-err">⚠ ${errors.length} righe ignorate: ${errors.slice(0,3).join('; ')}${errors.length>3?'...':''}</div>`;
+  html+=`<p style="font-size:11px;color:var(--text-faint);margin-top:8px;">Quantità (default 1) e flag Impilabile (default No) si impostano nel programma dopo l'importazione.</p>`;
+
+  document.getElementById('importPreview').innerHTML=html;
+  document.getElementById('confirmImportBtn').style.display='inline-block';
+  document.getElementById('confirmImportBtn').textContent=`Importa ${importedRows.length} colli`;
+}
+
+function confirmImport(){
+  if(!importedRows.length) return;
+  // Chiedi se aggiungere o sostituire
+  const mode=currentData.colli.length>0
+    ? confirm(`Hai già ${currentData.colli.length} colli nel progetto.\n\nOK = Sostituisci tutto\nAnnulla = Aggiungi ai colli esistenti`)
+    : true;
+  if(mode) currentData.colli=importedRows;
+  else currentData.colli=[...currentData.colli,...importedRows];
+  renderColliRows(); calcAndRender(); saveCurrentProject();
+  closeImport();
+}
+
+function showImportError(msg){
+  document.getElementById('importPreview').innerHTML=`<div class="import-err">✕ ${msg}</div>`;
+  document.getElementById('confirmImportBtn').style.display='none';
+  importedRows=[];
+}
+
+// ─── TEMPLATE DOWNLOAD ────────────────────────────────────────────────────────
+function downloadTemplate(){
+  const wb = XLSX.utils.book_new();
+
+  // ── Foglio 1: Colli ──
+  const dataRows = [
+    ['Nome','L_cm','P_cm','H_cm','Peso_kg'],
+    ['Collo A', 80, 60, 50, 30],
+    ['Collo B', 120, 80, 70, 80],
+    ['Collo C', 60, 40, 40, 20],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(dataRows);
+  ws['!cols'] = [{wch:20},{wch:9},{wch:9},{wch:9},{wch:11}];
+  ws['!freeze'] = { xSplit:0, ySplit:1 };
+  ws['!rows'] = [{hpt:22},{hpt:18},{hpt:18},{hpt:18}];
+
+  const headerStyle = {
+    font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:11 },
+    fill:{ fgColor:{ rgb:'1D5C3A' } },
+    alignment:{ horizontal:'center', vertical:'center' },
+    border:{ bottom:{ style:'medium', color:{ rgb:'0F3D28' } }, right:{ style:'thin', color:{ rgb:'0F3D28' } } }
+  };
+  const dataStyle = {
+    font:{ sz:10 }, alignment:{ vertical:'center' },
+    border:{ top:{style:'thin',color:{rgb:'E2E0D8'}}, bottom:{style:'thin',color:{rgb:'E2E0D8'}}, left:{style:'thin',color:{rgb:'E2E0D8'}}, right:{style:'thin',color:{rgb:'E2E0D8'}} }
+  };
+  const numStyle = { ...dataStyle, alignment:{ horizontal:'center', vertical:'center' }, numFmt:'0' };
+
+  ['A','B','C','D','E'].forEach(c=>{ if(ws[`${c}1`]) ws[`${c}1`].s = headerStyle; });
+  for(let r=2;r<=4;r++){
+    ['A','B','C','D','E'].forEach((c,i)=>{ if(ws[`${c}${r}`]) ws[`${c}${r}`].s = i===0 ? dataStyle : numStyle; });
+  }
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Colli');
+
+  // ── Foglio 2: Istruzioni ──
+  const inst = XLSX.utils.aoa_to_sheet([
+    ['CONTAINER PLANNER — Istruzioni per la compilazione'],
+    [''],
+    ['Compila il foglio "Colli" con i tuoi imballi. Non modificare le intestazioni nella riga 1.'],
+    ['Quantità e flag "impilabile" si impostano direttamente nel programma dopo l\'importazione.'],
+    [''],
+    ['COLONNE'],
+    ['Nome',    'Nome o codice del collo (es. "Scatola A", "PALLET-001")'],
+    ['L_cm',    'Lunghezza del collo in centimetri (numero intero, es. 80)'],
+    ['P_cm',    'Profondità / larghezza del collo in centimetri'],
+    ['H_cm',    'Altezza del collo in centimetri'],
+    ['Peso_kg', 'Peso del singolo collo in kg (0 se non rilevante)'],
+    [''],
+    ['NOTE'],
+    ['- Aggiungi righe quante ne vuoi sotto gli esempi'],
+    ['- Non lasciare righe vuote tra i colli'],
+    ['- Le dimensioni devono essere in centimetri (numeri positivi)'],
+  ]);
+  inst['!cols'] = [{wch:14},{wch:62}];
+  if(inst['A1']) inst['A1'].s = { font:{ bold:true, sz:13, color:{ rgb:'1D5C3A' } }, fill:{ fgColor:{ rgb:'EAF3DE' } } };
+  if(inst['A6']) inst['A6'].s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFF' } }, fill:{ fgColor:{ rgb:'1D5C3A' } } };
+  if(inst['A13']) inst['A13'].s = { font:{ bold:true, sz:10, color:{ rgb:'FFFFFF' } }, fill:{ fgColor:{ rgb:'1D5C3A' } } };
+
+  XLSX.utils.book_append_sheet(wb, inst, 'Istruzioni');
+  XLSX.writeFile(wb, 'template_container_planner.xlsx');
+}
+
+// Init
+if(!projects.length){const p=defaultProject();projects.push(p);saveProjects();}
+loadProject(projects[0].id);
+window.addEventListener('resize',()=>{if(currentData){const c=CONTAINERS[currentData.container];drawAllViews(lastPlaced,c,currentData.quota||0);}});
+
+// ── PWA: registra service worker inline ──
+if('serviceWorker' in navigator){
+  const swCode=`
+const CACHE='container-planner-v1';
+const ASSETS=[
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+];
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS).catch(()=>{})));
+  self.skipWaiting();
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch',e=>{
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>new Response('Offline',{status:503}))));
+});`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const swUrl=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl,{scope:'./'}).catch(()=>{});
+}
+
+// ── PWA: banner installa ──
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  // Mostra banner se non già installata
+  const banner=document.getElementById('installBanner');
+  if(banner) banner.style.display='flex';
+});
+window.addEventListener('appinstalled',()=>{
+  const banner=document.getElementById('installBanner');
+  if(banner) banner.style.display='none';
+  deferredPrompt=null;
+});
+
+function installPWA(){
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(()=>{ deferredPrompt=null; });
+  const banner=document.getElementById('installBanner');
+  if(banner) banner.style.display='none';
+}
+function dismissInstall(){
+  const banner=document.getElementById('installBanner');
+  if(banner) banner.style.display='none';
+}
+</script>
+<!-- Banner installazione PWA -->
+<div id="installBanner" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1D5C3A;color:#fff;border-radius:12px;padding:12px 20px;display:none;align-items:center;gap:12px;box-shadow:0 4px 20px #0004;z-index:300;font-family:Inter,sans-serif;font-size:13px;max-width:420px;width:90%;">
+  <span style="font-size:22px;">📦</span>
+  <div style="flex:1;">
+    <div style="font-weight:600;margin-bottom:2px;">Installa Container Planner</div>
+    <div style="opacity:.8;font-size:12px;">Usala come app, anche offline</div>
+  </div>
+  <button onclick="installPWA()" style="background:#fff;color:#1D5C3A;border:none;border-radius:8px;padding:7px 14px;font-weight:600;font-size:13px;cursor:pointer;">Installa</button>
+  <button onclick="dismissInstall()" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;padding:0 4px;opacity:.7;">✕</button>
+</div>
+
+<!-- Manifest PWA inline via script -->
+<script>
+(function(){
+  const manifest={
+    name:'Container Planner',
+    short_name:'Cont. Planner',
+    description:'Piano di carico container — calcola, visualizza ed esporta il tuo piano di stivaggio',
+    start_url:'.',
+    display:'standalone',
+    background_color:'#F7F6F2',
+    theme_color:'#1D5C3A',
+    orientation:'landscape-primary',
+    icons:[
+      {src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231D5C3A'/%3E%3Crect x='64' y='160' width='384' height='224' rx='20' fill='none' stroke='white' stroke-width='24'/%3E%3Crect x='96' y='192' width='120' height='128' rx='8' fill='white' opacity='.8'/%3E%3Crect x='236' y='192' width='80' height='128' rx='8' fill='white' opacity='.5'/%3E%3Crect x='336' y='192' width='80' height='128' rx='8' fill='white' opacity='.3'/%3E%3Cline x1='64' y1='336' x2='448' y2='336' stroke='white' stroke-width='16' opacity='.4'/%3E%3C/svg%3E",
+       sizes:'512x512', type:'image/svg+xml', purpose:'any maskable'}
+    ]
+  };
+  const blob=new Blob([JSON.stringify(manifest)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('link');
+  link.rel='manifest'; link.href=url;
+  // Rimuovi eventuale manifest esistente e aggiungi quello nuovo
+  document.querySelectorAll('link[rel="manifest"]').forEach(el=>el.remove());
+  document.head.appendChild(link);
+})();
+</script>
+
+</body>
+</html>
