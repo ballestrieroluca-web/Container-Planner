@@ -103,10 +103,30 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14
 .pi-note{font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic;width:100%;}
 
 /* Colli table */
-.colli-hdr{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 72px 28px;gap:5px;padding:0 2px 6px;}
+.colli-hdr{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 72px 28px 28px;gap:5px;padding:0 2px 6px;}
 .colli-hdr span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);text-align:center;}
 .colli-hdr span:first-child{text-align:left;}
-.collo-row{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 72px 28px;gap:5px;align-items:center;margin-bottom:5px;}
+.collo-row{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 64px 72px 28px 28px;gap:5px;align-items:center;margin-bottom:5px;}
+
+/* Magazzino grid: + rotation button */
+.mag-hdr{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 72px 90px 28px;gap:5px;padding:0 2px 6px;}
+.mag-hdr span{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-faint);text-align:center;}
+.mag-hdr span:first-child{text-align:left;}
+.mag-row{display:grid;grid-template-columns:2fr 52px 52px 52px 64px 56px 72px 90px 28px;gap:5px;align-items:center;margin-bottom:5px;}
+.mag-row input[type=text],.mag-row input[type=number]{width:100%;padding:6px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;}
+.mag-row input:focus{border-color:var(--accent);}
+.mag-actions{display:flex;gap:3px;justify-content:flex-end;align-items:center;}
+.add-to-plan-btn{padding:5px 8px;border-radius:5px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:3px;transition:opacity .15s;}
+.add-to-plan-btn:hover{opacity:.85;}
+.add-to-plan-btn input{width:32px;padding:2px 4px !important;border:none !important;background:rgba(255,255,255,0.2) !important;color:#fff !important;border-radius:3px !important;font-size:11px !important;text-align:center;}
+.add-to-plan-btn input::-webkit-outer-spin-button,
+.add-to-plan-btn input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.del-btn-mag{width:22px;height:22px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--text-faint);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.del-btn-mag:hover{background:var(--danger-light);color:var(--danger);border-color:var(--danger);}
+
+/* Bottone ruota — scambia L e P */
+.rotate-btn{width:24px;height:24px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--info);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .1s;}
+.rotate-btn:hover{background:var(--info-light);border-color:var(--info);}
 .collo-row input[type=text],.collo-row input[type=number]{width:100%;padding:6px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:var(--font);background:var(--surface);color:var(--text);outline:none;transition:border-color .15s;}
 .collo-row input:focus{border-color:var(--accent);}
 .toggle-cell{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;}
@@ -157,14 +177,28 @@ input[type=range]{accent-color:var(--accent);}
 .badge-qty{background:var(--info-light);color:var(--info);font-weight:700;min-width:30px;text-align:center;}
 .badge-warn{background:var(--warn-light);color:var(--warn);}
 
-/* 2D views */
-.views-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
-.view-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;}
-.view-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+/* 2D views — proporzioni ottimizzate:
+   - Pianta (L×P): più larga (rapporto ~5:1 per un 40')
+   - Fronte (P×H): la più stretta, è quasi quadrata
+   - Lato (L×H): media-larga */
+.views-grid{display:grid;grid-template-columns:2.2fr 1fr 2.2fr;gap:14px;}
+.view-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;cursor:zoom-in;transition:transform .15s,box-shadow .15s;}
+.view-card:hover{transform:translateY(-1px);box-shadow:0 4px 12px #0001;}
+.view-card .view-title{font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.view-zoom-hint{font-size:10px;color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0;opacity:.7;}
 canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);display:block;width:100%;}
 .canvas-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
 .legend-item{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);}
 .legend-dot{width:9px;height:9px;border-radius:2px;flex-shrink:0;}
+
+/* Modal zoom vista */
+.zoom-modal{position:fixed;inset:0;background:#000000B0;z-index:250;display:none;align-items:center;justify-content:center;padding:30px;cursor:zoom-out;}
+.zoom-modal.open{display:flex;}
+.zoom-modal-content{background:var(--surface);border-radius:var(--radius-lg);padding:24px;max-width:95vw;max-height:95vh;overflow:auto;position:relative;cursor:default;box-shadow:0 12px 40px #0006;}
+.zoom-modal-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.zoom-modal-close{background:transparent;border:none;color:var(--text-muted);font-size:22px;cursor:pointer;padding:0 4px;line-height:1;}
+.zoom-modal-close:hover{color:var(--danger);}
+#zoomCanvas{max-width:85vw;max-height:80vh;border:1px solid var(--border);border-radius:6px;background:var(--bg);}
 
 /* Quota box */
 .quota-box{background:var(--info-light);border:1px solid #B8D4F0;border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -240,14 +274,33 @@ canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);dis
         <div class="porta-info" id="portaInfo"></div>
       </div>
 
+      <!-- Magazzino colli -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div class="card-title" style="margin:0;">📦 Magazzino colli</div>
+          <div style="display:flex;gap:8px;">
+            <button class="export-btn" style="padding:5px 10px;font-size:12px;" onclick="addToMagazzino()" title="Aggiungi un nuovo collo al magazzino">+ Aggiungi a magazzino</button>
+            <button class="export-btn" style="padding:5px 10px;font-size:12px;" onclick="clearMagazzino()" title="Svuota magazzino">🗑 Svuota</button>
+          </div>
+        </div>
+        <p style="font-size:11px;color:var(--text-faint);margin-bottom:10px;">Lista di colli a disposizione. Modifica le proprietà qui, poi aggiungili al piano di carico con il pulsante →. Il magazzino è condiviso tra tutti i progetti.</p>
+        <div class="mag-hdr">
+          <span>Nome</span><span>L cm</span><span>P cm</span><span>H cm</span><span>Peso kg</span><span style="text-align:center;">Impilabile</span><span style="text-align:center;">Portata kg</span><span></span><span title="Ruota L↔P di 90°">⟲</span>
+        </div>
+        <div id="magazzinoRows"></div>
+        <div id="magazzinoEmpty" style="text-align:center;padding:20px;color:var(--text-faint);font-size:13px;display:none;">
+          Magazzino vuoto. Aggiungi colli manualmente o importali da Excel.
+        </div>
+      </div>
+
       <!-- Colli -->
       <div class="card">
-        <div class="card-title">Colli da caricare</div>
+        <div class="card-title">Colli da caricare nel container</div>
         <div class="colli-hdr">
-          <span>Nome</span><span>L cm</span><span>P cm</span><span>H cm</span><span>Peso kg</span><span>Q.tà</span><span style="text-align:center;">Impilabile</span><span style="text-align:center;" title="Peso massimo sopportabile sopra (0=illimitato)">Portata kg</span><span></span>
+          <span>Nome</span><span>L cm</span><span>P cm</span><span>H cm</span><span>Peso kg</span><span>Q.tà</span><span style="text-align:center;">Impilabile</span><span style="text-align:center;" title="Peso massimo sopportabile sopra (0=illimitato)">Portata kg</span><span title="Ruota L↔P di 90°">⟲</span><span></span>
         </div>
         <div id="colliRows"></div>
-        <button class="add-collo-btn" onclick="addCollo()">+ Aggiungi collo</button>
+        <button class="add-collo-btn" onclick="addCollo()">+ Aggiungi collo manualmente</button>
 
         <div class="settings-row">
           <!-- Quota -->
@@ -268,21 +321,33 @@ canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);dis
       <div class="card">
         <div class="card-title">Vista 2D — tutte le proiezioni</div>
         <div class="views-grid">
-          <div class="view-card">
-            <div class="view-title">🔝 Pianta (dall'alto)</div>
+          <div class="view-card" onclick="openZoom('top')">
+            <div class="view-title"><span>🔝 Pianta (dall'alto)</span><span class="view-zoom-hint">🔍 click per ingrandire</span></div>
             <canvas id="cv-top"></canvas>
           </div>
-          <div class="view-card">
-            <div class="view-title">🚪 Fronte (dalla porta)</div>
+          <div class="view-card" onclick="openZoom('front')">
+            <div class="view-title"><span>🚪 Fronte</span><span class="view-zoom-hint">🔍</span></div>
             <canvas id="cv-front"></canvas>
           </div>
-          <div class="view-card">
-            <div class="view-title">↔ Lato</div>
+          <div class="view-card" onclick="openZoom('side')">
+            <div class="view-title"><span>↔ Lato</span><span class="view-zoom-hint">🔍 click per ingrandire</span></div>
             <canvas id="cv-side"></canvas>
           </div>
         </div>
         <div class="canvas-legend" id="canvasLegend" style="margin-top:12px;"></div>
-        <p style="font-size:11px;color:var(--text-faint);margin-top:6px;">Le aree tratteggiate mostrano la quota di sicurezza. Passa il mouse sui riquadri per dettagli.</p>
+        <p style="font-size:11px;color:var(--text-faint);margin-top:6px;">Le aree tratteggiate mostrano la quota di sicurezza. Passa il mouse sui riquadri per dettagli, clicca su una vista per ingrandirla.</p>
+      </div>
+
+      <!-- Modal zoom vista -->
+      <div class="zoom-modal" id="zoomModal" onclick="if(event.target===this)closeZoom()">
+        <div class="zoom-modal-content">
+          <div class="zoom-modal-title">
+            <span id="zoomTitle">Vista</span>
+            <button class="zoom-modal-close" onclick="closeZoom()" title="Chiudi">×</button>
+          </div>
+          <canvas id="zoomCanvas"></canvas>
+          <div class="canvas-legend" id="zoomLegend" style="margin-top:12px;"></div>
+        </div>
       </div>
 
       <!-- Riepilogo -->
@@ -310,6 +375,17 @@ canvas{border:1px solid var(--border);border-radius:6px;background:var(--bg);dis
     <div class="template-note">
       Colonne richieste: <code>Nome</code> <code>L_cm</code> <code>P_cm</code> <code>H_cm</code> <code>Peso_kg</code><br>
       <span style="font-size:11px;margin-top:4px;display:block;">Quantità e flag Impilabile si impostano nel programma dopo l'importazione.</span>
+    </div>
+    <div style="background:var(--bg);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;font-size:12px;">
+      <strong style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;">Destinazione</strong>
+      <div style="display:flex;gap:16px;margin-top:6px;">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="importDest" value="magazzino" checked style="accent-color:var(--accent);"> 📦 Magazzino (riutilizzabile)
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="radio" name="importDest" value="piano" style="accent-color:var(--accent);"> 📋 Piano di carico corrente
+        </label>
+      </div>
     </div>
     <div class="drop-zone" id="dropZone"
       ondragover="event.preventDefault();this.classList.add('drag-over')"
@@ -344,8 +420,88 @@ const CONTAINERS = {
 const PALETTE=['#1D9E75','#185FA5','#BA7517','#A32D2D','#7F77DD','#0F6E56','#3B6D11','#854F0B','#534AB7','#993556'];
 
 let projects=JSON.parse(localStorage.getItem('cp_projects')||'[]');
+let magazzino=JSON.parse(localStorage.getItem('cp_magazzino')||'[]');
 let currentId=null, currentData=null;
 let lastDettagli=[], lastPlaced=[], allCanvasRects=[];
+
+function saveMagazzino(){localStorage.setItem('cp_magazzino',JSON.stringify(magazzino));}
+
+function renderMagazzino(){
+  const cont=document.getElementById('magazzinoRows');
+  const empty=document.getElementById('magazzinoEmpty');
+  if(!magazzino.length){
+    cont.innerHTML='';
+    empty.style.display='block';
+    return;
+  }
+  empty.style.display='none';
+  cont.innerHTML=magazzino.map((col,i)=>`
+    <div class="mag-row">
+      <input type="text" value="${col.nome||''}" placeholder="Nome collo" oninput="magazzino[${i}].nome=this.value;saveMagazzino()">
+      <input type="number" value="${col.l||0}" min="1" placeholder="L" oninput="magazzino[${i}].l=+this.value;saveMagazzino()">
+      <input type="number" value="${col.p||0}" min="1" placeholder="P" oninput="magazzino[${i}].p=+this.value;saveMagazzino()">
+      <input type="number" value="${col.h||0}" min="1" placeholder="H" oninput="magazzino[${i}].h=+this.value;saveMagazzino()">
+      <input type="number" value="${col.peso||0}" min="0" placeholder="kg" oninput="magazzino[${i}].peso=+this.value;saveMagazzino()">
+      <div class="toggle-cell">
+        <input type="checkbox" ${col.impilabile?'checked':''} onchange="magazzino[${i}].impilabile=this.checked;this.nextElementSibling.textContent=this.checked?'Sì':'No';saveMagazzino()">
+        <span>${col.impilabile?'Sì':'No'}</span>
+      </div>
+      <input type="number" value="${col.portata||0}" min="0" placeholder="0=∞" oninput="magazzino[${i}].portata=+this.value;saveMagazzino()">
+      <div class="mag-actions">
+        <button class="add-to-plan-btn" onclick="addFromMagazzino(${i})" title="Aggiungi al piano di carico">→ <input type="number" id="magQty${i}" value="1" min="1" onclick="event.stopPropagation()"></button>
+        <button class="del-btn-mag" onclick="delFromMagazzino(${i})" title="Rimuovi dal magazzino">×</button>
+      </div>
+      <button class="rotate-btn" onclick="rotateMagazzino(${i})" title="Ruota di 90° (scambia L e P)">⟲</button>
+    </div>`).join('');
+}
+
+function rotateMagazzino(i){
+  const c=magazzino[i];
+  [c.l, c.p]=[c.p, c.l];
+  saveMagazzino(); renderMagazzino();
+}
+
+function addToMagazzino(){
+  magazzino.push({nome:'Nuovo collo',l:60,p:40,h:40,peso:20,impilabile:false,portata:0});
+  saveMagazzino();
+  renderMagazzino();
+}
+
+function delFromMagazzino(i){
+  magazzino.splice(i,1);
+  saveMagazzino();
+  renderMagazzino();
+}
+
+function clearMagazzino(){
+  if(!magazzino.length) return;
+  if(!confirm(`Svuotare completamente il magazzino? (${magazzino.length} colli)`)) return;
+  magazzino=[];
+  saveMagazzino();
+  renderMagazzino();
+}
+
+function addFromMagazzino(i){
+  const col=magazzino[i];
+  const qtyInput=document.getElementById('magQty'+i);
+  const qty=Math.max(1,parseInt(qtyInput.value)||1);
+  // Verifica se esiste già un collo identico nel piano corrente
+  const existing=currentData.colli.find(c=>
+    c.nome===col.nome && c.l===col.l && c.p===col.p && c.h===col.h &&
+    c.peso===col.peso && c.impilabile===col.impilabile && c.portata===(col.portata||0)
+  );
+  if(existing){
+    existing.qty=(existing.qty||1)+qty;
+  } else {
+    currentData.colli.push({
+      nome:col.nome, l:col.l, p:col.p, h:col.h, peso:col.peso,
+      qty, impilabile:col.impilabile, portata:col.portata||0
+    });
+  }
+  renderColliRows();
+  calcAndRender();
+  saveCurrentProject();
+}
 
 function defaultProject(){
   return {
@@ -450,8 +606,15 @@ function renderColliRows(){
         <span>${col.impilabile?'Sì':'No'}</span>
       </div>
       <input type="number" value="${col.portata||0}" min="0" placeholder="0=∞" title="Portata max kg sopra (0=illimitata)" oninput="currentData.colli[${i}].portata=+this.value;calcAndRender();saveCurrentProject()">
+      <button class="rotate-btn" onclick="rotateCollo(${i})" title="Ruota di 90° (scambia L e P)">⟲</button>
       <button class="del-btn" onclick="delCollo(${i})" title="Rimuovi">×</button>
     </div>`).join('');
+}
+
+function rotateCollo(i){
+  const c=currentData.colli[i];
+  [c.l, c.p]=[c.p, c.l];
+  renderColliRows(); calcAndRender(); saveCurrentProject();
 }
 
 function addCollo(){
@@ -490,241 +653,227 @@ function verificaPorta(col,c){
 function packBoxes(colli, uL, uP, uH) {
   const placed = [];
 
-  // Collisione AABB tra due box
+  // ── Collisione AABB ──
   function overlaps(ax,ay,az,al,ap,ah, bx,by,bz,bl,bp,bh){
     return ax<bx+bl-0.01 && ax+al>bx+0.01 &&
            ay<by+bp-0.01 && ay+ap>by+0.01 &&
            az<bz+bh-0.01 && az+ah>bz+0.01;
   }
 
-  // Verifica che (x,y,z,l,p,h) sia dentro i bordi, non collida con nessuno,
-  // e — regola assoluta — non stia sopra a un box NON impilabile.
-  // "Sopra" significa: si sovrappone in XY con b, e z >= b.z+b.h (cioè parte dalla sua cima o più su).
+  // Verifica che la posizione sia libera e nei bordi
+  // Regola assoluta: nessuno sopra a un non-impilabile
   function canPlace(x,y,z,l,p,h){
     if(x<-0.01||y<-0.01||z<-0.01) return false;
     if(x+l>uL+0.01||y+p>uP+0.01||z+h>uH+0.01) return false;
     for(const b of placed){
-      // collisione AABB diretta
-      if(overlaps(x,y,z,l,p,h, b.x,b.y,b.z,b.l,b.p,b.h)) return false;
-      // regola assoluta: nessuno può stare sopra a un non-impilabile
+      if(overlaps(x,y,z,l,p,h,b.x,b.y,b.z,b.l,b.p,b.h)) return false;
       if(!b.impilabile){
-        const overlapXY = x<b.x+b.l-0.01 && x+l>b.x+0.01 &&
-                          y<b.y+b.p-0.01 && y+p>b.y+0.01;
-        if(overlapXY && z>=b.z+b.h-0.01) return false;
+        const oxy=x<b.x+b.l-0.01&&x+l>b.x+0.01&&y<b.y+b.p-0.01&&y+p>b.y+0.01;
+        if(oxy&&z>=b.z+b.h-0.01) return false;
       }
     }
     return true;
   }
 
-  // Altezza massima dei box IMPILABILI nell'area XY — su cosa ci si può appoggiare.
-  // I box non-impilabili non vengono contati: nessuno può usarli come base.
-  function zFloor(x,y,l,p){
-    let maxZ=0;
-    for(const b of placed){
-      if(!b.impilabile) continue; // non-impilabile: non fa da base
-      if(b.x<x+l-0.01 && b.x+b.l>x+0.01 &&
-         b.y<y+p-0.01 && b.y+b.p>y+0.01){
-        maxZ=Math.max(maxZ, b.z+b.h);
-      }
-    }
-    return maxZ;
-  }
-
-  // Candidati X e Y: 0 + bordi dei box già piazzati (ordinati crescenti)
+  // Candidati posizioni X,Y (bordi dei box già piazzati + 0)
   function getCandidates(l,p){
-    const xs=new Set([0]);
-    const ys=new Set([0]);
-    for(const b of placed){ xs.add(b.x+b.l); ys.add(b.y+b.p); }
+    const xs=new Set([0]), ys=new Set([0]);
+    for(const b of placed){xs.add(b.x+b.l);ys.add(b.y+b.p);}
     return {
       xArr:[...xs].filter(v=>v+l<=uL+0.01).sort((a,b)=>a-b),
       yArr:[...ys].filter(v=>v+p<=uP+0.01).sort((a,b)=>a-b)
     };
   }
 
-  // Candidati Z per una posizione XY: 0 + cime dei box che si sovrappongono in XY
-  function getZCandidates(x,y,l,p){
-    const zs=new Set([0]);
+  // Peso totale sopra un box (ricorsivo)
+  function weightOnTop(target){
+    const topZ=target.z+target.h;
+    let tot=0;
     for(const b of placed){
-      if(b.x<x+l-0.01 && b.x+b.l>x+0.01 &&
-         b.y<y+p-0.01 && b.y+b.p>y+0.01){
-        zs.add(b.z+b.h);
-      }
+      if(b===target) continue;
+      const oxy=b.x<target.x+target.l-0.01&&b.x+b.l>target.x+0.01&&
+                b.y<target.y+target.p-0.01&&b.y+b.p>target.y+0.01;
+      if(oxy&&Math.abs(b.z-topZ)<1.0){tot+=b.peso;tot+=weightOnTop(b);}
     }
-    return [...zs].sort((a,b)=>a-b);
+    return tot;
   }
 
-  // First-fit: cerca prima posizione libera.
-  // forceGroundOnly=true → tenta solo z=0, poi z>0 come fallback separato
-  function placeBox(box, forceGroundOnly){
-    const {l,p,h}=box;
-    const {xArr,yArr}=getCandidates(l,p);
-
-    if(forceGroundOnly){
-      // Tentativo 1: solo pavimento (z=0), riempie lateralmente
-      for(const x of xArr){
-        for(const y of yArr){
-          if(canPlace(x,y,0,l,p,h)){
-            placed.push({...box,x,y,z:0});
-            return true;
-          }
-        }
-      }
-      return false;
-    }
-
-    // First-fit generico: x→y→z, preferisce basse altezze
-    for(const x of xArr){
-      for(const y of yArr){
-        for(const z of getZCandidates(x,y,l,p)){
-          if(canPlace(x,y,z,l,p,h)){
-            placed.push({...box,x,y,z});
-            return true;
-          }
-        }
-      }
-    }
-    return false;
+  // Un base può reggere newPeso aggiuntivo?
+  function canCarry(base,newPeso){
+    if(!base.portata||base.portata<=0) return true;
+    return weightOnTop(base)+newPeso<=base.portata;
   }
 
-  // Verifica che l'intera base del box (x,y,z,l,p) sia completamente supportata
-  // da colli impilabili già piazzati (cima a esattamente z) oppure dal pavimento (z==0).
-  // Nessuno sbalzo ammesso.
-  function isFullySupported(x,y,z,l,p){
-    if(z<=0.01) return true; // appoggiato sul pavimento: ok
-    // Discretizza il footprint in punti di campionamento (ogni SAMPLE cm)
-    const SAMPLE=5;
-    const steps_x=Math.max(1,Math.ceil(l/SAMPLE));
-    const steps_y=Math.max(1,Math.ceil(p/SAMPLE));
-    for(let ix=0;ix<=steps_x;ix++){
-      for(let iy=0;iy<=steps_y;iy++){
-        const px=x + (ix/steps_x)*l*0.98 + l*0.01; // punto interno (evita bordi esatti)
-        const py=y + (iy/steps_y)*p*0.98 + p*0.01;
-        // controlla che esista almeno un box impilabile la cui cima sia a z in questo punto
-        let supported=false;
-        for(const b of placed){
-          if(!b.impilabile) continue;
-          if(px>=b.x-0.01&&px<=b.x+b.l+0.01&&
-             py>=b.y-0.01&&py<=b.y+b.p+0.01&&
-             Math.abs((b.z+b.h)-z)<0.5){
-            supported=true; break;
-          }
-        }
-        if(!supported) return false;
-      }
+  // Verifica che TUTTA la catena di supporto sotto la posizione (x,y,z) possa
+  // reggere newPeso aggiuntivo. Risale ricorsivamente dal box immediatamente
+  // sotto fino a terra: ogni anello della catena deve avere portata sufficiente.
+  // newBoxL, newBoxP servono per identificare l'area di sovrapposizione.
+  function canSupportChain(newX, newY, newZ, newL, newP, newPeso){
+    if(newZ <= 0.01) return true; // a terra: nessun supporto necessario
+    // Trova tutti i box che stanno DIRETTAMENTE sotto al nuovo box
+    // (cima esattamente alla z del nuovo box, sovrapposti in XY)
+    const directSupports = placed.filter(b=>{
+      if(!b.impilabile) return false;
+      const oxy = b.x < newX+newL-0.01 && b.x+b.l > newX+0.01 &&
+                  b.y < newY+newP-0.01 && b.y+b.p > newY+0.01;
+      return oxy && Math.abs((b.z+b.h)-newZ) < 1.0;
+    });
+    if(!directSupports.length) return false; // nessun supporto trovato
+
+    // Ogni supporto diretto deve poter reggere newPeso
+    // E ricorsivamente, ogni base sotto deve poter reggere il peso che si propaga
+    for(const support of directSupports){
+      if(!canCarry(support, newPeso)) return false;
+      // Ricorsione: anche le basi sotto al supporto devono reggere newPeso
+      if(!canSupportChain(support.x, support.y, support.z, support.l, support.p, newPeso))
+        return false;
     }
     return true;
   }
 
-  // Calcola il peso totale di tutti i box che gravano (direttamente o indirettamente)
-  // su un box target. Usato per verificare la portata massima.
-  function weightOnTop(target){
-    // Trova i box che poggiano direttamente sulla cima del target
-    const topZ = target.z + target.h;
-    let total = 0;
-    for(const b of placed){
-      if(b===target) continue;
-      // b poggia su target se: si sovrappone in XY e la sua z == topZ del target
-      const overXY = b.x < target.x+target.l-0.01 && b.x+b.l > target.x+0.01 &&
-                     b.y < target.y+target.p-0.01 && b.y+b.p > target.y+0.01;
-      if(overXY && Math.abs(b.z - topZ) < 0.5){
-        total += b.peso; // peso del collo diretto
-        total += weightOnTop(b); // ricorsivo: peso su b
-      }
-    }
-    return total;
-  }
-
-  // Verifica che aggiungere newBox sulla cima di target non superi la portata di target.
-  // portata=0 significa illimitata.
-  function canSupportWeight(target, newBoxPeso){
-    if(!target.portata || target.portata<=0) return true; // illimitata
-    const alreadyOnTop = weightOnTop(target);
-    return alreadyOnTop + newBoxPeso <= target.portata;
-  }
-
-  // Impila su un box impilabile già piazzato con footprint >= (più simile possibile).
-  // Controlla sbalzi E portata massima.
-  function placeOnTop(box){
-    const {l,p,h}=box;
-    const candidates=[...placed]
-      .filter(b=> b.impilabile && b.l>=l-0.01 && b.p>=p-0.01)
-      .map(b=>({b, score:(b.l*b.p)-(l*p)}))
-      .sort((a,b_)=>a.score-b_.score);
-
-    for(const {b:target} of candidates){
-      // Verifica portata prima ancora di cercare la posizione
-      if(!canSupportWeight(target, box.peso)) continue;
-
-      const offsets=[
-        {dx:0,                dy:0},
-        {dx:(target.l-l)/2,   dy:(target.p-p)/2},
-        {dx:target.l-l,       dy:0},
-        {dx:0,                dy:target.p-p},
-        {dx:target.l-l,       dy:target.p-p},
-      ];
-      for(const {dx,dy} of offsets){
-        const cx=target.x+dx, cy=target.y+dy;
-        if(cx<-0.01||cy<-0.01||cx+l>uL+0.01||cy+p>uP+0.01) continue;
-        const z=zFloor(cx,cy,l,p);
-        if(z < target.z+target.h-0.01) continue;
-        if(!isFullySupported(cx,cy,z,l,p)) continue;
-        if(canPlace(cx,cy,z,l,p,h)){
-          placed.push({...box,x:cx,y:cy,z});
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // Impila generico (fallback di placeBox per impilabili):
-  // quando un impilabile va a terra tramite first-fit, verifica comunque
-  // che non finisca in quota su una base non completamente supportata.
-  function placeBoxStackable(box){
+  // Piazza a terra (z=0)
+  function placeOnFloor(box){
     const {l,p,h}=box;
     const {xArr,yArr}=getCandidates(l,p);
-    for(const x of xArr){
-      for(const y of yArr){
-        for(const z of getZCandidates(x,y,l,p)){
-          if(z>0.01 && !isFullySupported(x,y,z,l,p)) continue; // no sbalzo
-          if(canPlace(x,y,z,l,p,h)){
-            placed.push({...box,x,y,z});
-            return true;
-          }
-        }
+    for(const x of xArr) for(const y of yArr)
+      if(canPlace(x,y,0,l,p,h)){placed.push({...box,x,y,z:0});return true;}
+    return false;
+  }
+
+  // Impila direttamente sopra una base specifica
+  // Verifica che TUTTA la catena di supporto regga il nuovo peso
+  function stackOnBase(box, base){
+    const {l,p,h}=box;
+    if(!base.impilabile) return false;
+    const z=base.z+base.h;
+    if(z+h>uH+0.01) return false;
+    // Prova posizioni dentro il footprint della base
+    const dxMax=Math.max(0,base.l-l);
+    const dyMax=Math.max(0,base.p-p);
+    const offsets=[
+      {dx:0,        dy:0},
+      {dx:dxMax/2,  dy:dyMax/2},
+      {dx:dxMax,    dy:0},
+      {dx:0,        dy:dyMax},
+      {dx:dxMax,    dy:dyMax},
+    ];
+    for(const {dx,dy} of offsets){
+      const cx=base.x+dx, cy=base.y+dy;
+      if(cx<-0.01||cy<-0.01||cx+l>uL+0.01||cy+p>uP+0.01) continue;
+      // Verifica la catena di supporto: ogni base sotto deve reggere
+      if(!canSupportChain(cx,cy,z,l,p,box.peso)) continue;
+      if(canPlace(cx,cy,z,l,p,h)){
+        placed.push({...box,x:cx,y:cy,z});
+        return true;
       }
     }
     return false;
   }
 
-  // Ordina: footprint desc in entrambi i gruppi
-  const base  = colli.filter(c=>!c.impilabile).sort((a,b)=>(b.l*b.p)-(a.l*a.p));
-  const stack = colli.filter(c=> c.impilabile).sort((a,b)=>(b.l*b.p)-(a.l*a.p));
+  // ════════════════════════════════════════════════════════════════
+  // LOGICA DI CARICO:
+  //
+  // 1. PAVIMENTO: metti tutti i colli a terra (grandi prima)
+  //
+  // 2. Per ogni collo non piazzato a terra (in ordine di footprint desc):
+  //
+  //    a. Cerca basi SIMILI (stesso nome+dim) che possono reggere
+  //       → impila su quella con meno peso sopra
+  //
+  //    b. Se non trova simili disponibili, cerca basi PIÙ GRANDI
+  //       (l>=collo.l e p>=collo.p) impilabili con portata sufficiente
+  //       → impila su quella con meno peso sopra e footprint più simile
+  //
+  //    c. Solo se nessuna base regge → escludi e segnala
+  // ════════════════════════════════════════════════════════════════
+
+  // Espandi e ordina per footprint desc
+  const allBoxes=[];
+  colli.forEach(col=>{for(let n=0;n<col.qty;n++) allBoxes.push({...col});});
+  allBoxes.sort((a,b)=>(b.l*b.p)-(a.l*a.p));
 
   let excludedCount=0;
+  const portataExcluded={};
 
-  // Fase 1: non-impilabili — prima solo pavimento, poi quota come ultima risorsa
-  for(const col of base){
-    for(let n=0;n<col.qty;n++){
-      if(!placeBox({...col}, true)){   // solo z=0
-        if(!placeBox({...col}, false)) // fallback quota
-          excludedCount++;
+  // STEP 1 — Pavimento
+  const offFloor=[];
+  for(const box of allBoxes){
+    if(!placeOnFloor(box)) offFloor.push(box);
+  }
+
+  // STEP 2 — Impila i rimanenti
+  // Logica unificata: per ogni collo da impilare considera TUTTE le basi
+  // impilabili con footprint >= e portata sufficiente. Sceglie la base
+  // migliore in base a un punteggio combinato:
+  //   1) Privilegia basi che possono ospitare il collo (canCarry)
+  //   2) Tra queste, preferisce footprint più simile (meno spreco)
+  //   3) A parità, preferisce z più bassa (riempie dal basso)
+  //   4) A parità, preferisce maggiore portata residua (più "spazio peso")
+  for(const box of offFloor){
+    if(!box.impilabile){excludedCount++;continue;}
+
+    let done=false;
+
+    // Tutte le basi candidate impilabili con footprint >=
+    // Per ognuna verifichiamo l'intera catena di supporto (non solo la base diretta)
+    const candidate=[...placed]
+      .filter(b=>b.impilabile && b.l>=box.l-0.01 && b.p>=box.p-0.01)
+      .map(b=>{
+        // La z su cui appoggerebbe il nuovo box
+        const newZ=b.z+b.h;
+        // Verifica che tutta la catena (b incluso e tutto sotto) regga box.peso
+        // Usa il footprint del nuovo box centrato sulla base
+        const cx=b.x + Math.max(0,(b.l-box.l)/2);
+        const cy=b.y + Math.max(0,(b.p-box.p)/2);
+        const chainOk=canSupportChain(cx,cy,newZ,box.l,box.p,box.peso);
+        const carica=weightOnTop(b);
+        const residua=b.portata>0 ? (b.portata-carica) : Infinity;
+        const sprecoFootprint=(b.l*b.p)-(box.l*box.p);
+        return {b, residua, chainOk, sprecoFootprint};
+      })
+      .filter(o=>o.chainOk) // solo basi con catena di supporto valida
+      .sort((a,b_)=>{
+        const boxArea=box.l*box.p;
+        if(Math.abs(a.sprecoFootprint-b_.sprecoFootprint) > boxArea*0.3){
+          return a.sprecoFootprint-b_.sprecoFootprint;
+        }
+        if(Math.abs(a.b.z-b_.b.z) > 1){
+          return a.b.z-b_.b.z;
+        }
+        return b_.residua-a.residua;
+      })
+      .map(o=>o.b);
+
+    for(const base of candidate){
+      if(stackOnBase(box,base)){done=true;break;}
+    }
+
+    // 2c — Nessuna base disponibile → escludi
+    if(!done){
+      excludedCount++;
+      // Era escluso per portata (c'è una base geometricamente ok ma troppo carica)?
+      const hasBigEnough=placed.some(b=>b.impilabile&&b.l>=box.l-0.01&&b.p>=box.p-0.01);
+      const portataBlocks=hasBigEnough&&placed.some(b=>
+        b.impilabile&&b.l>=box.l-0.01&&b.p>=box.p-0.01&&
+        b.portata>0&&(weightOnTop(b)+box.peso)>b.portata
+      );
+      if(portataBlocks){
+        if(!portataExcluded[box.nome])
+          portataExcluded[box.nome]={esclusi:0,portata:box.portata,nome:box.nome};
+        portataExcluded[box.nome].esclusi++;
       }
     }
   }
 
-  // Fase 2: impilabili — grandi a terra (placeOnTop fallisce, va a terra),
-  //          piccoli trovano i grandi e ci salgono sopra
-  for(const col of stack){
-    for(let n=0;n<col.qty;n++){
-      if(!placeOnTop({...col})){
-        if(!placeBoxStackable({...col})) // fallback: first-fit con anti-sbalzo
-          excludedCount++;
-      }
-    }
+  // Marca sovraccarichi post-packing: un box è sovraccarico se il peso totale
+  // che ha sopra supera la sua portata (la portata si riferisce al peso sopra)
+  for(const b of placed){
+    b._overloaded=false;
+    if(!b.portata||b.portata<=0) continue;
+    if(weightOnTop(b)>b.portata) b._overloaded=true;
   }
 
-  return {placed, excludedCount};
+  return {placed,excludedCount,portataExcluded};
 }
 
 function calcAndRender(){
@@ -779,32 +928,10 @@ function calcAndRender(){
 
   if(totalePeso>c.maxPayload) alerts.push({tipo:'err',msg:`Peso totale (${Math.round(totalePeso).toLocaleString()} kg) supera il payload massimo di ${c.maxPayload.toLocaleString()} kg!`});
 
-  // Verifica portata: per ogni collo impilabile con portata definita,
-  // calcola il peso totale che gli grava sopra tra i box piazzati
-  if(packResult && packResult.placed){
-    const placed=packResult.placed;
-    const weightOn=(target)=>{
-      const topZ=target.z+target.h;
-      let tot=0;
-      for(const b of placed){
-        if(b===target) continue;
-        const oxy=b.x<target.x+target.l-0.01&&b.x+b.l>target.x+0.01&&b.y<target.y+target.p-0.01&&b.y+b.p>target.y+0.01;
-        if(oxy&&Math.abs(b.z-topZ)<0.5){tot+=b.peso;tot+=weightOn(b);}
-      }
-      return tot;
-    };
-    // Raggruppa avvisi per tipologia (non per singolo box)
-    const portataWarnMap={};
-    for(const b of placed){
-      if(!b.portata||b.portata<=0) continue;
-      const w=weightOn(b);
-      if(w>b.portata){
-        if(!portataWarnMap[b.nome]||portataWarnMap[b.nome].peso<w)
-          portataWarnMap[b.nome]={peso:Math.round(w),portata:b.portata};
-      }
-    }
-    Object.entries(portataWarnMap).forEach(([nome,{peso,portata}])=>{
-      alerts.push({tipo:'err',msg:`⚠ Sovraccarico su "${nome}": ${peso} kg sopra, portata max ${portata} kg!`});
+  // Avvisi portata: colli esclusi dal packer per limite di portata
+  if(packResult && packResult.portataExcluded){
+    Object.values(packResult.portataExcluded).forEach(({nome,esclusi,portata})=>{
+      alerts.push({tipo:'warn',msg:`"${nome}": ${esclusi} collo/i non impilato/i perché supererebbe la portata max di ${portata} kg del collo sottostante. Posizionati a terra o esclusi.`});
     });
   }
 
@@ -845,10 +972,85 @@ function calcAndRender(){
   lastDettagli=dettagli;
   lastPlaced=placed;
   drawAllViews(placed,c,quota);
+  refreshZoomIfOpen();
 
-  document.getElementById('canvasLegend').innerHTML=dettagli.filter(d=>d.entrata&&d.caricabili>0).map(d=>`
-    <div class="legend-item"><div class="legend-dot" style="background:${d.color};"></div>${d.nome} (×${d.caricabili}${d.restanti>0?', <span style="color:var(--danger)">+'+d.restanti+' esclusi</span>':''})</div>`).join('');
+  const hasOverloaded = lastPlaced.some(b=>b._overloaded);
+  document.getElementById('canvasLegend').innerHTML=
+    dettagli.filter(d=>d.entrata&&d.caricabili>0).map(d=>`
+      <div class="legend-item"><div class="legend-dot" style="background:${d.color};"></div>${d.nome} (×${d.caricabili}${d.restanti>0?', <span style="color:var(--danger)">+'+d.restanti+' esclusi</span>':''})</div>`).join('')+
+    (hasOverloaded?'<div class="legend-item"><div class="legend-dot" style="background:#E24B4A;"></div><span style="color:#E24B4A;font-weight:600;">⚠ Sovraccarico portata</span></div>':'');
 }
+
+// ── Zoom vista in modal ──
+const VIEW_LABELS={
+  top:   '🔝 Pianta (dall\'alto)',
+  front: '🚪 Fronte (dalla porta)',
+  side:  '↔ Lato',
+};
+let currentZoomView=null;
+
+function openZoom(view){
+  if(!currentData||!lastPlaced) return;
+  currentZoomView=view;
+  document.getElementById('zoomModal').classList.add('open');
+  document.getElementById('zoomTitle').textContent=VIEW_LABELS[view]||'Vista';
+  // Clona la legenda nella modal
+  document.getElementById('zoomLegend').innerHTML=document.getElementById('canvasLegend').innerHTML;
+  // Disegna in canvas grande dopo il reflow
+  requestAnimationFrame(()=>{
+    const c=CONTAINERS[currentData.container];
+    const quota=currentData.quota||0;
+    drawZoomedView(view, lastPlaced, c, quota);
+  });
+}
+
+function closeZoom(){
+  document.getElementById('zoomModal').classList.remove('open');
+  currentZoomView=null;
+}
+
+function drawZoomedView(view, placed, c, quota){
+  const canvas=document.getElementById('zoomCanvas');
+  // Calcola dimensione ottimale del canvas (più grande)
+  const maxW=Math.min(window.innerWidth*0.85, 1400);
+  const maxH=window.innerHeight*0.7;
+  // Stima dimensioni reali in base alla vista
+  let cW,cH;
+  if(view==='top')  {cW=c.l;cH=c.p;}
+  if(view==='front'){cW=c.p;cH=c.h;}
+  if(view==='side') {cW=c.l;cH=c.h;}
+  const ratio=cW/cH;
+  let canvasW=maxW, canvasH=maxW/ratio + 80;
+  if(canvasH>maxH){canvasH=maxH; canvasW=(maxH-80)*ratio;}
+  canvas.style.width=canvasW+'px';
+  canvas.style.height=canvasH+'px';
+  canvas.width=canvasW;
+  canvas.height=canvasH;
+  // Disegna sul canvas dello zoom: trick = swap temporaneamente l'ID
+  // ma più semplice: replico drawView qui passando il canvas
+  drawViewOnCanvas(canvas, placed, c, quota, view, currentData.container);
+}
+
+// Wrapper che richiama drawView passando un canvas specifico
+function drawViewOnCanvas(canvas, placed, c, quota, view, cntKey){
+  // Trucco: assegna temporaneamente un id e chiama drawView
+  const origId=canvas.id;
+  const tmpId='__zoom_tmp_'+Date.now();
+  canvas.id=tmpId;
+  drawView(tmpId, placed, c, quota, view, cntKey);
+  canvas.id=origId;
+}
+
+// Aggiorna il canvas dello zoom in tempo reale se è aperto
+function refreshZoomIfOpen(){
+  if(currentZoomView){
+    const c=CONTAINERS[currentData.container];
+    drawZoomedView(currentZoomView, lastPlaced, c, currentData.quota||0);
+  }
+}
+
+// ESC chiude zoom
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeZoom(); });
 
 function drawAllViews(placed,c,quota){
   allCanvasRects=[];
@@ -866,7 +1068,9 @@ function drawView(canvasId,placed,c,quota,view,cntKey){
   const canvas=document.getElementById(canvasId);
   const ctx=canvas.getContext('2d');
   const PAD=30;
-  const W=canvas.offsetWidth||320;
+  // Se il canvas ha già una width esplicita (caso zoom), usa quella
+  // Altrimenti usa offsetWidth (rendering inline normale)
+  const W=canvas.width>canvas.offsetWidth ? canvas.width : (canvas.offsetWidth||320);
   canvas.width=W;
 
   // Tipo container — dichiarato subito, usato ovunque sotto
@@ -1075,28 +1279,53 @@ function drawView(canvasId,placed,c,quota,view,cntKey){
       rh=box.h*scale;
     }
 
-    // quota offset per top/front/side
-    // già incorporata nelle coordinate box (box.x/y/z partono da quota)
     const rw2=Math.max(1,rw-1.5), rh2=Math.max(1,rh-1.5);
+    const isOverloaded = box._overloaded === true;
 
-    ctx.fillStyle=box.color+'3A';
-    ctx.fillRect(rx,ry,rw2,rh2);
-    ctx.strokeStyle=box.color;ctx.lineWidth=1.5;
-    ctx.strokeRect(rx,ry,rw2,rh2);
-
-    const fs=Math.min(9,Math.min(rw2,rh2)/2.8);
-    if(rw2>16&&rh2>10&&fs>=5){
-      ctx.fillStyle=box.color;
-      ctx.font=`600 ${fs}px Inter,sans-serif`;
-      ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(box.nome.substring(0,6),rx+rw2/2,ry+rh2/2);
+    if(isOverloaded){
+      // Collo sovraccaricato: sfondo rosso semitrasparente + pattern tratteggio
+      ctx.fillStyle='#E24B4A33';
+      ctx.fillRect(rx,ry,rw2,rh2);
+      // Tratteggio diagonale rosso
+      ctx.save();
+      ctx.beginPath();ctx.rect(rx,ry,rw2,rh2);ctx.clip();
+      ctx.strokeStyle='#E24B4A88';ctx.lineWidth=1;
+      for(let i=-(rh2);i<rw2+rh2;i+=6){
+        ctx.beginPath();ctx.moveTo(rx+i,ry);ctx.lineTo(rx+i+rh2,ry+rh2);ctx.stroke();
+      }
+      ctx.restore();
+      // Bordo rosso spesso lampeggiante-style
+      ctx.strokeStyle='#E24B4A';ctx.lineWidth=2.5;
+      ctx.strokeRect(rx,ry,rw2,rh2);
+      // Icona ⚠ centrata
+      const fs=Math.min(11,Math.min(rw2,rh2)/2.5);
+      if(rw2>20&&rh2>14&&fs>=6){
+        ctx.fillStyle='#E24B4A';
+        ctx.font=`bold ${fs}px Inter,sans-serif`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('⚠ '+box.nome.substring(0,5),rx+rw2/2,ry+rh2/2);
+      }
+    } else {
+      ctx.fillStyle=box.color+'3A';
+      ctx.fillRect(rx,ry,rw2,rh2);
+      ctx.strokeStyle=box.color;ctx.lineWidth=1.5;
+      ctx.strokeRect(rx,ry,rw2,rh2);
+      const fs=Math.min(9,Math.min(rw2,rh2)/2.8);
+      if(rw2>16&&rh2>10&&fs>=5){
+        ctx.fillStyle=box.color;
+        ctx.font=`600 ${fs}px Inter,sans-serif`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText(box.nome.substring(0,6),rx+rw2/2,ry+rh2/2);
+      }
     }
 
     allCanvasRects.push({
       canvasId,x:rx,y:ry,w:rw2,h:rh2,
       nome:box.nome,dim:`${box.l}×${box.p}×${box.h} cm`,
       pos:`x:${Math.round(box.x+quota)} y:${Math.round(box.y+quota)} z:${Math.round(box.z)} cm`,
-      peso:`${box.peso} kg/cad`,impilabile:box.impilabile
+      peso:`${box.peso} kg/cad`,impilabile:box.impilabile,
+      overloaded:isOverloaded,
+      portata:box.portata||0
     });
   }
 
@@ -1130,8 +1359,7 @@ function drawView(canvasId,placed,c,quota,view,cntKey){
       tip.style.display='block';
       tip.style.left=(e.clientX+12)+'px';
       tip.style.top=(e.clientY-10)+'px';
-      tip.innerHTML=`<strong>${hit.nome}</strong><br>${hit.dim} · ${hit.peso}${hit.portata>0?`<br>Portata max: ${hit.portata} kg`:'<br>Portata: ∞'}${hit.impilabile?'<br>▲ impilabile':''}`;
-    }else tip.style.display='none';
+      tip.innerHTML=`<strong>${hit.nome}</strong>${hit.overloaded?'<br><span style="color:#ff6b6b;font-weight:600;">⚠ SOVRACCARICO PORTATA</span>':''}<br>${hit.dim} · ${hit.peso}${hit.portata>0?`<br>Portata max: ${hit.portata} kg`:'<br>Portata: ∞'}${hit.impilabile?'<br>▲ impilabile':''}`;    }else tip.style.display='none';
   });
   el.addEventListener('mouseleave',()=>document.getElementById('tooltip').style.display='none');
 });
@@ -1442,13 +1670,26 @@ function parseImportRows(rows){
 
 function confirmImport(){
   if(!importedRows.length) return;
-  // Chiedi se aggiungere o sostituire
-  const mode=currentData.colli.length>0
-    ? confirm(`Hai già ${currentData.colli.length} colli nel progetto.\n\nOK = Sostituisci tutto\nAnnulla = Aggiungi ai colli esistenti`)
-    : true;
-  if(mode) currentData.colli=importedRows;
-  else currentData.colli=[...currentData.colli,...importedRows];
-  renderColliRows(); calcAndRender(); saveCurrentProject();
+  const dest=document.querySelector('input[name="importDest"]:checked')?.value||'magazzino';
+
+  if(dest==='magazzino'){
+    // Aggiungi al magazzino (senza qty)
+    const newRows=importedRows.map(r=>({
+      nome:r.nome, l:r.l, p:r.p, h:r.h, peso:r.peso,
+      impilabile:r.impilabile||false, portata:r.portata||0
+    }));
+    magazzino=[...magazzino,...newRows];
+    saveMagazzino();
+    renderMagazzino();
+  } else {
+    // Aggiungi al piano di carico (con qty=1 di default)
+    const mode=currentData.colli.length>0
+      ? confirm(`Hai già ${currentData.colli.length} colli nel piano.\n\nOK = Sostituisci tutto\nAnnulla = Aggiungi ai colli esistenti`)
+      : true;
+    if(mode) currentData.colli=importedRows;
+    else currentData.colli=[...currentData.colli,...importedRows];
+    renderColliRows(); calcAndRender(); saveCurrentProject();
+  }
   closeImport();
 }
 
@@ -1541,12 +1782,13 @@ function applyTheme(theme){
 // Init
 if(!projects.length){const p=defaultProject();projects.push(p);saveProjects();}
 loadProject(projects[0].id);
+renderMagazzino();
 // Applica tema salvato
 applyTheme(localStorage.getItem('cp_theme')||'light');
 window.addEventListener('resize',()=>{if(currentData){const c=CONTAINERS[currentData.container];drawAllViews(lastPlaced,c,currentData.quota||0);}});
 
-// ── PWA: registra service worker inline ──
-if('serviceWorker' in navigator){
+// ── PWA: service worker (solo su HTTPS, es. GitHub Pages) ──
+if('serviceWorker' in navigator && location.protocol==='https:'){
   const swCode=`
 const CACHE='container-planner-v1';
 const ASSETS=[
